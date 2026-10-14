@@ -2,11 +2,11 @@ import type { Account, Address, Hash, Hex, PublicClient, WalletClient } from "vi
 import { complianceRegistryAbi, rootRegistryAbi, settlementAbi } from "./abi.ts";
 import type { Deployment } from "./deployment.ts";
 import type { Point } from "./disclosure.ts";
-import { feeParams } from "./fees.ts";
 import type { MerkleTree } from "./merkle.ts";
 import type { ComplianceContext, ComplianceProof } from "./prover.ts";
 import type { SortedTree } from "./sorted-tree.ts";
 import type { Terms } from "./trade.ts";
+import { submit } from "./tx.ts";
 
 export type Policy = { minTier: number; maxProofAge: bigint; attestationTtl: bigint };
 
@@ -158,20 +158,8 @@ export class KeelsonClient {
     );
   }
 
-  private async send(
-    write: (
-      wallet: WalletClient,
-      fees: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint },
-    ) => Promise<Hash>,
-  ): Promise<Hash> {
-    const wallet = this.walletClient;
-    if (!wallet?.account) {
-      throw new Error("a wallet client with an account is required to send transactions");
-    }
-    const hash = await write(wallet, await feeParams(this.publicClient));
-    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
-    if (receipt.status !== "success") throw new Error(`transaction ${hash} reverted`);
-    return hash;
+  private send(write: Parameters<typeof submit>[2]): Promise<Hash> {
+    return submit(this.publicClient, this.walletClient, write);
   }
 }
 

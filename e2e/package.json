@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc",
-    "test:e2e": "vitest run"
+    "test:e2e": "vitest run --exclude test/cctp.fork.test.ts",
+    "test:fork": "vitest run test/cctp.fork.test.ts"
   },
   "dependencies": {
     "@keelson/issuer": "workspace:*",

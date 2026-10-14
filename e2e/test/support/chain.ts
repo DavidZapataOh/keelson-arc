@@ -2,7 +2,7 @@ import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { resolve } from "node:path";
-import { type Deployment, feeParams, readBroadcast } from "@keelson/sdk";
+import { arc, type Deployment, feeParams, readBroadcast } from "@keelson/sdk";
 import {
   type Chain,
   createPublicClient,
@@ -20,11 +20,12 @@ const contracts = resolve(new URL("../../../contracts", import.meta.url).pathnam
 
 // Foundry's well-known development mnemonic: these accounts are funded on the local node and hold nothing anywhere else.
 const MNEMONIC = "test test test test test test test test test test test junk";
-const ACCOUNTS = { owner: 0, seller: 1, buyer: 2 } as const;
+const ACCOUNTS = { owner: 0, seller: 1, buyer: 2, attester: 3 } as const;
 const account = (actor: keyof typeof ACCOUNTS) =>
   mnemonicToAccount(MNEMONIC, { addressIndex: ACCOUNTS[actor] });
 
 export type Actor = keyof typeof ACCOUNTS;
+export const accountOf = account;
 
 const freePort = () =>
   new Promise<number>((resolvePort, reject) => {
@@ -44,23 +45,27 @@ export type LocalChain = {
   stop: () => void;
 };
 
-/** Starts a local Arc node (`arc-anvil --network arc`) on a free port. */
-export async function startChain(): Promise<LocalChain> {
+/** Starts a local Arc node (`arc-anvil --network arc`) on a free port, optionally forking a live chain. */
+export async function startChain(options: { forkUrl?: string } = {}): Promise<LocalChain> {
   const port = await freePort();
+  const fork = options.forkUrl ? ["--fork-url", options.forkUrl] : [];
   const child: ChildProcess = spawn(
     "arc-anvil",
-    ["--network", "arc", "--port", String(port), "--silent"],
+    ["--network", "arc", "--port", String(port), "--silent", ...fork],
     {
       stdio: "ignore",
     },
   );
   const url = `http://127.0.0.1:${port}`;
-  const chain = defineChain({
-    id: 31337,
-    name: "Local Arc",
-    nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-    rpcUrls: { default: { http: [url] } },
-  });
+  const rpcUrls = { default: { http: [url] } };
+  const chain = options.forkUrl
+    ? defineChain({ ...arc, rpcUrls })
+    : defineChain({
+        id: 31337,
+        name: "Local Arc",
+        nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+        rpcUrls,
+      });
   const publicClient = createPublicClient({ chain, transport: http(url) });
 
   for (let attempt = 0; ; attempt++) {
