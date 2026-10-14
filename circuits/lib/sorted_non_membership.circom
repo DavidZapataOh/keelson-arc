@@ -7,6 +7,7 @@ include "merkle.circom";
 
 // Proves `value` is absent from a sorted Merkle set: some leaf (low, next)
 // is in the tree with low < value < next. Values are 248-bit integers.
+// `low` and `next` come from a committed leaf, so only `value` needs a range check.
 template SortedNonMembership(depth) {
     signal input root;
     signal input value;
@@ -17,10 +18,6 @@ template SortedNonMembership(depth) {
 
     component valueBits = Num2Bits(248);
     valueBits.in <== value;
-    component lowBits = Num2Bits(248);
-    lowBits.in <== low;
-    component nextBits = Num2Bits(248);
-    nextBits.in <== next;
 
     component above = LessThan(248);
     above.in[0] <== low;

@@ -5,7 +5,8 @@
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run",
-    "build:circuit": "node scripts/cli.ts"
+    "build:circuit": "node scripts/cli.ts",
+    "bench": "node scripts/bench.ts"
   },
   "dependencies": {
     "circomlib": "2.0.5",

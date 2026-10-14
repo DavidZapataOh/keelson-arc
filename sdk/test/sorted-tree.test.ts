@@ -29,4 +29,9 @@ describe("SortedTree", () => {
     expect(() => new SortedTree(2, [0n])).toThrow("values must be");
     expect(() => new SortedTree(2, [MAX_VALUE])).toThrow("values must be");
   });
+
+  it("holds 2^depth - 1 values and rejects one more", () => {
+    expect(() => new SortedTree(2, [1n, 2n, 3n])).not.toThrow();
+    expect(() => new SortedTree(2, [1n, 2n, 3n, 4n])).toThrow("full");
+  });
 });

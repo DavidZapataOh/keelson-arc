@@ -1,0 +1,7 @@
+{
+  "compliance": {
+    "maxConstraints": 25500,
+    "maxCeremonyPower": 16,
+    "publicSignals": 13
+  }
+}
