@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { complianceInput, nullifierOf } from "@keelson/sdk";
+import { complianceInput, decryptSubject, nullifierOf, subjectOf } from "@keelson/sdk";
 import * as snarkjs from "snarkjs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { type BuildResult, buildCircuit } from "../scripts/build.ts";
-import { credential, request } from "./compliance.fixtures.ts";
+import { credential, regulatorSecret, request } from "./compliance.fixtures.ts";
 
 const source = new URL("./fixtures/compliance.circom", import.meta.url).pathname;
 let built: BuildResult;
@@ -18,17 +18,22 @@ const prove = () => snarkjs.groth16.fullProve(complianceInput(request), built.wa
 describe("compliance proof", () => {
   it("verifies and exposes the public signals in a fixed order", async () => {
     const { proof, publicSignals } = await prove();
-    expect(publicSignals).toEqual(
-      [
-        nullifierOf(credential.secret, request.tradeId),
-        request.tradeId,
-        request.tradingAddress,
-        request.issuers.root,
-        request.sanctions.root,
-        request.revocations.root,
-        request.minTier,
-        request.validAt,
-      ].map(String),
+    const [nullifier, c1x, c1y, c2, ...inputs] = publicSignals.map(BigInt) as bigint[];
+    expect(nullifier).toBe(nullifierOf(credential.secret, request.tradeId));
+    expect(inputs).toEqual([
+      request.tradeId,
+      request.tradingAddress,
+      request.issuers.root,
+      request.sanctions.root,
+      request.revocations.root,
+      request.minTier,
+      request.validAt,
+      request.regulatorKey.x,
+      request.regulatorKey.y,
+    ]);
+    expect(publicSignals).toHaveLength(13);
+    expect(decryptSubject({ c1x, c1y, c2 } as never, regulatorSecret)).toBe(
+      subjectOf(credential.secret),
     );
     expect(await snarkjs.groth16.verify(vkey(), publicSignals, proof)).toBe(true);
   }, 120_000);

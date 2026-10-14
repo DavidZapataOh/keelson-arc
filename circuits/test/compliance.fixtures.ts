@@ -5,6 +5,7 @@ import {
   issuerFromKey,
   issuerLeaf,
   MerkleTree,
+  regulatorPublicKey,
   SortedTree,
 } from "@keelson/sdk";
 
@@ -24,6 +25,8 @@ export const credential: Credential = {
   identifiers: [1000n, 2000n],
 };
 
+export const regulatorSecret = 987654321n;
+
 export const request: ComplianceRequest = {
   credential,
   issuer,
@@ -35,4 +38,6 @@ export const request: ComplianceRequest = {
   tradingAddress: 0xabcdn,
   minTier: 1n,
   validAt: 1_800_000_000n,
+  regulatorKey: regulatorPublicKey(regulatorSecret),
+  ephemeral: 555n,
 };

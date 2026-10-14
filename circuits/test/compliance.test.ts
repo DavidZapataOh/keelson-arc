@@ -1,6 +1,6 @@
-import { complianceInput, nullifierOf } from "@keelson/sdk";
+import { complianceInput, decryptSubject, nullifierOf, subjectOf } from "@keelson/sdk";
 import { beforeAll, describe, expect, it } from "vitest";
-import { credential, otherIssuer, request } from "./compliance.fixtures.ts";
+import { credential, otherIssuer, regulatorSecret, request } from "./compliance.fixtures.ts";
 import { compileFixture } from "./support.ts";
 
 let circuit: Awaited<ReturnType<typeof compileFixture>>;
@@ -67,11 +67,29 @@ describe("Compliance", () => {
     expect(() => complianceInput({ ...request, credential: revoked })).toThrow("member");
   });
 
-  it("derives a nullifier that is stable per trade and unique across trades and holders", async () => {
+  it("derives a nullifier that is stable per trade and unique across trades", async () => {
     const nullifier = async (input: object) => (await run(input))[1];
     const base = await nullifier(valid());
     expect(base).toBe(nullifierOf(credential.secret, request.tradeId));
     expect(await nullifier(valid())).toBe(base);
     expect(await nullifier({ ...valid(), tradeId: 2n })).not.toBe(base);
+  });
+
+  it("encrypts the subject so only the regulator can recover it", async () => {
+    const [, , c1x, c1y, c2] = (await run(valid())) as bigint[];
+    const ciphertext = { c1x: c1x as bigint, c1y: c1y as bigint, c2: c2 as bigint };
+    expect(decryptSubject(ciphertext, regulatorSecret)).toBe(subjectOf(credential.secret));
+    expect(decryptSubject(ciphertext, regulatorSecret + 1n)).not.toBe(subjectOf(credential.secret));
+  });
+
+  it("produces unlinkable ciphertexts for the same holder", async () => {
+    const first = (await run(valid())) as bigint[];
+    const second = (await run(complianceInput({ ...request, ephemeral: 556n }))) as bigint[];
+    expect(second[2]).not.toBe(first[2]);
+    expect(second[4]).not.toBe(first[4]);
+  });
+
+  it("rejects a regulator key that is not on the curve", async () => {
+    await expect(run({ ...valid(), regulatorKeyX: 1n, regulatorKeyY: 2n })).rejects.toThrow();
   });
 });

@@ -1,5 +1,6 @@
 import type { Credential, Issuer } from "./credential.ts";
 import { signCredential } from "./credential.ts";
+import type { Point } from "./disclosure.ts";
 import type { MerkleTree } from "./merkle.ts";
 import type { SortedTree } from "./sorted-tree.ts";
 
@@ -14,6 +15,8 @@ export type ComplianceRequest = {
   tradingAddress: bigint;
   minTier: bigint;
   validAt: bigint;
+  regulatorKey: Point;
+  ephemeral: bigint;
 };
 
 /** Builds the input object of the Compliance circuit; throws if the holder is not eligible. */
@@ -31,6 +34,9 @@ export const complianceInput = (request: ComplianceRequest) => {
     revocationRoot: request.revocations.root,
     minTier: request.minTier,
     validAt: request.validAt,
+    regulatorKeyX: request.regulatorKey.x,
+    regulatorKeyY: request.regulatorKey.y,
+    ephemeral: request.ephemeral,
     secret: credential.secret,
     credentialId: credential.credentialId,
     tier: credential.tier,

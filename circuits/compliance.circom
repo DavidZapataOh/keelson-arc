@@ -4,12 +4,15 @@ include "circomlib/circuits/bitify.circom";
 include "circomlib/circuits/comparators.circom";
 include "circomlib/circuits/eddsaposeidon.circom";
 include "circomlib/circuits/poseidon.circom";
+include "lib/disclosure.circom";
 include "lib/merkle.circom";
 include "lib/sorted_non_membership.circom";
 
 // Proves the holder of an issuer-signed credential is eligible to trade:
 // credential is signed by a listed issuer, unexpired, above the minimum tier,
-// not revoked, and none of its identifiers are on the sanctions list.
+// not revoked, and none of its identifiers are on the sanctions list. The
+// holder's pseudonymous subject is encrypted to the regulator key so an
+// authorised party can later link the trade to the credential.
 template Compliance(issuerDepth, sanctionsDepth, revocationDepth, ids) {
     signal input tradeId;
     signal input tradingAddress;
@@ -18,9 +21,15 @@ template Compliance(issuerDepth, sanctionsDepth, revocationDepth, ids) {
     signal input revocationRoot;
     signal input minTier;
     signal input validAt;
+    signal input regulatorKeyX;
+    signal input regulatorKeyY;
     signal output nullifier;
+    signal output c1x;
+    signal output c1y;
+    signal output c2;
 
     signal input secret;
+    signal input ephemeral;
     signal input credentialId;
     signal input tier;
     signal input jurisdiction;
@@ -123,6 +132,15 @@ template Compliance(issuerDepth, sanctionsDepth, revocationDepth, ids) {
     nullifierHash.inputs[0] <== secret;
     nullifierHash.inputs[1] <== tradeId;
     nullifier <== nullifierHash.out;
+
+    component disclosure = Disclosure();
+    disclosure.regulatorKeyX <== regulatorKeyX;
+    disclosure.regulatorKeyY <== regulatorKeyY;
+    disclosure.ephemeral <== ephemeral;
+    disclosure.message <== subject.out;
+    c1x <== disclosure.c1x;
+    c1y <== disclosure.c1y;
+    c2 <== disclosure.c2;
 
     signal addressSquare <== tradingAddress * tradingAddress;
 }
