@@ -1,0 +1,23 @@
+{
+  "name": "@keelson/keeper",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "start": "node src/main.ts"
+  },
+  "dependencies": {
+    "@keelson/lists": "workspace:*",
+    "@keelson/sdk": "workspace:*",
+    "viem": "2.57.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.4"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -3,6 +3,7 @@ packages:
   - circuits
   - lists
   - issuer
+  - keeper
   - e2e
   - app
 

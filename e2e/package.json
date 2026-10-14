@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@keelson/issuer": "workspace:*",
+    "@keelson/keeper": "workspace:*",
     "@keelson/lists": "workspace:*",
     "@keelson/sdk": "workspace:*",
     "snarkjs": "0.7.6",
