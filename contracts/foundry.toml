@@ -13,3 +13,11 @@ remappings = ["@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"]
 
 [lint]
 exclude_lints = ["block-timestamp"]
+
+[invariant]
+runs = 256
+depth = 32
+fail_on_revert = false
+
+[rpc_endpoints]
+arc = "https://rpc.mainnet.arc.io"

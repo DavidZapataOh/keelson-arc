@@ -69,9 +69,13 @@ jobs:
         working-directory: contracts
       - run: arc-forge build
         working-directory: contracts
-      - run: arc-forge test --network arc
+      - run: arc-forge test --network arc --no-match-path "test/*Fork*"
         working-directory: contracts
-      - run: arc-forge snapshot --network arc --check
+      - run: arc-forge snapshot --network arc --no-match-path "test/*Fork*" --check
+        working-directory: contracts
+      - name: Fork tests against Arc mainnet
+        if: github.event_name != 'pull_request'
+        run: arc-forge test --network arc --match-path "test/*Fork*"
         working-directory: contracts
 
   live:
