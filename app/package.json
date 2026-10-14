@@ -12,6 +12,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
+    "@keelson/issuer": "workspace:*",
+    "@keelson/lists": "workspace:*",
     "@playwright/test": "1.64.0",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
@@ -21,6 +23,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "axe-core": "4.14.0",
+    "fake-indexeddb": "6.2.5",
     "jsdom": "30.1.2",
     "typescript": "7.0.2",
     "vite": "8.3.4",
@@ -30,6 +33,7 @@
     "@fontsource-variable/geist-mono": "5.3.0",
     "@fontsource-variable/instrument-sans": "5.3.0",
     "@keelson/sdk": "workspace:*",
+    "buffer": "6.0.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "viem": "2.57.5"

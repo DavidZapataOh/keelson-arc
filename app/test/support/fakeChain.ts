@@ -1,4 +1,4 @@
-import { complianceRegistryAbi, settlementAbi } from "@keelson/sdk/abi";
+import { complianceRegistryAbi, rootRegistryAbi, settlementAbi } from "@keelson/sdk/abi";
 import {
   type Address,
   createPublicClient,
@@ -30,6 +30,7 @@ export const FILE: DeploymentFile = {
 };
 
 type Overrides = {
+  versions?: Partial<Record<"issuers" | "sanctions" | "revocations", bigint>>;
   chainId?: number;
   empty?: Address[];
   links?: Partial<
@@ -53,6 +54,12 @@ export function answer(method: string, args: unknown[], overrides: Overrides = {
     if (target === ADDRESSES.compliance.toLowerCase()) {
       const { functionName } = decodeFunctionData({ abi: complianceRegistryAbi, data });
       return word(links[functionName as "verifier" | "issuers" | "sanctions" | "revocations"]);
+    }
+    for (const name of ["issuers", "sanctions", "revocations"] as const) {
+      if (target === ADDRESSES[name].toLowerCase()) {
+        decodeFunctionData({ abi: rootRegistryAbi, data });
+        return encodeAbiParameters([{ type: "uint64" }], [overrides.versions?.[name] ?? 0n]);
+      }
     }
     if (target === ADDRESSES.settlement.toLowerCase()) {
       const { functionName } = decodeFunctionData({ abi: settlementAbi, data });

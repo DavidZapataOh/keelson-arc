@@ -270,3 +270,173 @@ h1 {
     flex-direction: column;
   }
 }
+
+.stack {
+  display: grid;
+  gap: 24px;
+  max-width: 760px;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.panel label {
+  font-weight: 500;
+}
+
+.panel input,
+.panel textarea {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--graphite);
+  border-radius: var(--radius-s);
+  background: transparent;
+  font: inherit;
+  width: 100%;
+}
+
+.panel textarea {
+  resize: vertical;
+  font-size: 0.8rem;
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--graphite);
+}
+
+.btn-outline:hover {
+  background: var(--graphite);
+  color: var(--bone);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.subject {
+  word-break: break-all;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  font-size: 0.8rem;
+}
+
+.alert {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  max-width: 560px;
+}
+
+.lists,
+.credentials {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  max-width: 920px;
+  border-top: 1px solid var(--graphite);
+}
+
+.lists li,
+.credentials li {
+  display: grid;
+  grid-template-columns: 16px minmax(160px, 1.2fr) auto minmax(180px, 1.4fr) auto;
+  gap: 8px 24px;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.credentials li {
+  grid-template-columns: 16px minmax(160px, 1.2fr) auto auto auto;
+}
+
+.mark {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--graphite);
+}
+
+.mark.accepted,
+.mark.valid {
+  background: var(--vermilion);
+  border-color: var(--vermilion);
+}
+
+.mark.stale,
+.mark.expired,
+.mark.revoked {
+  background: var(--graphite);
+}
+
+.list-facts {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.list-facts dt {
+  color: var(--text-2);
+}
+
+.list-facts dd {
+  margin: 0;
+}
+
+.state {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.state.stale,
+.state.revoked,
+.state.expired {
+  color: var(--vermilion-deep);
+}
+
+.redacted {
+  display: grid;
+  gap: 6px;
+  width: 120px;
+}
+
+.bar {
+  display: block;
+  height: 10px;
+  background: var(--graphite);
+  border-radius: 2px;
+}
+
+.bar.short {
+  width: 60%;
+}
+
+@media (max-width: 860px) {
+  .lists li,
+  .credentials li {
+    grid-template-columns: 16px 1fr;
+  }
+
+  .lists li > :nth-child(n + 3),
+  .credentials li > :nth-child(n + 3) {
+    grid-column: 2;
+  }
+}

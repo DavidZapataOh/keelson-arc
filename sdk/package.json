@@ -24,6 +24,13 @@
     "./arc": "./src/arc.ts",
     "./fees": "./src/fees.ts",
     "./trade": "./src/trade.ts",
-    "./tx": "./src/tx.ts"
+    "./tx": "./src/tx.ts",
+    "./poseidon": "./src/poseidon.ts",
+    "./merkle": "./src/merkle.ts",
+    "./sorted-tree": "./src/sorted-tree.ts",
+    "./snapshot": "./src/snapshot.ts",
+    "./parameters": "./src/parameters.ts",
+    "./credential": "./src/credential.ts",
+    "./codec": "./src/codec.ts"
   }
 }

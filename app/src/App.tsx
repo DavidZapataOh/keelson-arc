@@ -1,8 +1,8 @@
 import { arc } from "@keelson/sdk/arc";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { loadDeployment } from "./deployment/load.ts";
-import { Credential } from "./pages/Credential.tsx";
-import { Lists } from "./pages/Lists.tsx";
+import { ListsProvider } from "./lists/context.tsx";
+import type { ListsEngine } from "./lists/engine.ts";
 import { Trades } from "./pages/Trades.tsx";
 import { Connect } from "./shell/Connect.tsx";
 import { DeploymentFailed, Loading, WrongNetwork } from "./shell/states.tsx";
@@ -10,6 +10,12 @@ import { ROUTES, type RouteId, TopBar } from "./shell/TopBar.tsx";
 import { AppProvider, type Chain } from "./state/context.tsx";
 import { useSession } from "./state/useSession.ts";
 import { useWallets } from "./state/useWallets.ts";
+import { VaultProvider } from "./vault/context.tsx";
+
+const Credential = lazy(() =>
+  import("./pages/Credential.tsx").then((m) => ({ default: m.Credential })),
+);
+const Lists = lazy(() => import("./pages/Lists.tsx").then((m) => ({ default: m.Lists })));
 
 const DEPLOYMENT_URL = import.meta.env.VITE_DEPLOYMENT_URL ?? "/deployment.json";
 
@@ -35,7 +41,13 @@ function useRoute(): RouteId {
   return route;
 }
 
-export function App({ load = defaultLoad }: { load?: () => Promise<Chain> }) {
+export function App({
+  load = defaultLoad,
+  makeEngine,
+}: {
+  load?: () => Promise<Chain>;
+  makeEngine?: () => ListsEngine;
+}) {
   const [boot, setBoot] = useState<Boot>({ state: "loading" });
   const wallets = useWallets();
   const { session, error, connectWallet, openReadOnly, disconnect } = useSession();
@@ -61,23 +73,31 @@ export function App({ load = defaultLoad }: { load?: () => Promise<Chain> }) {
       <main id="main">
         {boot.state === "loading" && <Loading />}
         {boot.state === "failed" && <DeploymentFailed error={boot.error} onRetry={start} />}
-        {boot.state === "ready" && !session && (
-          <Connect
-            wallets={wallets}
-            error={error}
-            onConnect={connectWallet}
-            onReadOnly={openReadOnly}
-          />
-        )}
-        {boot.state === "ready" && session && wrongChain && (
-          <WrongNetwork onSwitch={() => void session.switchChain()} />
-        )}
-        {boot.state === "ready" && session && !wrongChain && (
-          <AppProvider value={{ chain: boot.chain, session }}>
-            {route === "trades" && <Trades />}
-            {route === "credential" && <Credential />}
-            {route === "lists" && <Lists />}
-          </AppProvider>
+        {boot.state === "ready" && (
+          <ListsProvider chain={boot.chain} makeEngine={makeEngine}>
+            <VaultProvider>
+              {!session && (
+                <Connect
+                  wallets={wallets}
+                  error={error}
+                  onConnect={connectWallet}
+                  onReadOnly={openReadOnly}
+                />
+              )}
+              {session && wrongChain && (
+                <WrongNetwork onSwitch={() => void session.switchChain()} />
+              )}
+              {session && !wrongChain && (
+                <AppProvider value={{ chain: boot.chain, session }}>
+                  <Suspense fallback={<Loading />}>
+                    {route === "trades" && <Trades />}
+                    {route === "credential" && <Credential />}
+                    {route === "lists" && <Lists />}
+                  </Suspense>
+                </AppProvider>
+              )}
+            </VaultProvider>
+          </ListsProvider>
         )}
       </main>
     </>

@@ -1,3 +1,4 @@
+import "./polyfills.ts";
 import "@fontsource-variable/instrument-sans/wght.css";
 import "@fontsource-variable/geist-mono/wght.css";
 import "./styles/global.css";
