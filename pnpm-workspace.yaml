@@ -3,6 +3,7 @@ packages:
   - circuits
   - lists
   - issuer
+  - e2e
   - app
 
 allowBuilds:

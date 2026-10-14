@@ -1,0 +1,21 @@
+{
+  "name": "@keelson/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc",
+    "test:e2e": "vitest run"
+  },
+  "dependencies": {
+    "@keelson/issuer": "workspace:*",
+    "@keelson/lists": "workspace:*",
+    "@keelson/sdk": "workspace:*",
+    "snarkjs": "0.7.6",
+    "viem": "2.57.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.4"
+  }
+}

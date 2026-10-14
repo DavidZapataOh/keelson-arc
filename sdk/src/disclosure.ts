@@ -1,6 +1,7 @@
-import { randomBytes } from "node:crypto";
 import { buildBabyjub } from "circomlibjs";
+import { bytesToBigInt } from "viem";
 import { hash } from "./poseidon.ts";
+import { randomBytes } from "./random.ts";
 
 const babyJub = await buildBabyjub();
 const field = babyJub.F;
@@ -19,7 +20,7 @@ export const regulatorPublicKey = (secret: bigint): Point => {
 
 /** A fresh 253-bit scalar for one encryption. */
 export const randomEphemeral = (): bigint =>
-  BigInt(`0x${randomBytes(32).toString("hex")}`) >> BigInt(256 - SCALAR_BITS);
+  bytesToBigInt(randomBytes(32)) >> BigInt(256 - SCALAR_BITS);
 
 /** Recovers the encrypted subject with the regulator's secret key. */
 export const decryptSubject = (ciphertext: Ciphertext, regulatorSecret: bigint): bigint => {

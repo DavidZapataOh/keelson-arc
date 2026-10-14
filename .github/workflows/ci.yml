@@ -73,10 +73,56 @@ jobs:
         working-directory: contracts
       - run: arc-forge snapshot --network arc --no-match-path "test/*Fork*" --check
         working-directory: contracts
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - run: node scripts/export-abis.ts --check
+        working-directory: sdk
       - name: Fork tests against Arc mainnet
         if: github.event_name != 'pull_request'
         run: arc-forge test --network arc --match-path "test/*Fork*"
         working-directory: contracts
+
+  e2e:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install circom
+        run: |
+          curl -sSfL -o circom https://github.com/iden3/circom/releases/download/v2.2.3/circom-linux-amd64
+          echo "85342c7ff332d948df7c0c50ecf201e6129349aef550ce873f3c811b79fe53a3  circom" | sha256sum -c -
+          chmod +x circom
+          mkdir -p "$HOME/.local/bin"
+          mv circom "$HOME/.local/bin/circom"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install Arc Foundry
+        run: |
+          base=https://github.com/circlefin/arc-foundry/releases/download/v0.8.0-2
+          archive=arc-foundry-v0.8.0-2-x86_64-unknown-linux-gnu.tar.gz
+          curl -sSfL -o "$archive" "$base/$archive"
+          echo "088bdb96a84418b757f9825d491e702792f1d1d1e29a9145af305a6600a79556  $archive" | sha256sum -c -
+          tar -xzf "$archive"
+          mkdir -p "$HOME/.local/bin"
+          mv forge "$HOME/.local/bin/arc-forge"
+          mv cast "$HOME/.local/bin/arc-cast"
+          mv anvil "$HOME/.local/bin/arc-anvil"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: actions/cache@v6.1.0
+        with:
+          path: circuits/.cache
+          key: ptau-v1
+      - run: pnpm install --frozen-lockfile
+      - run: arc-forge build
+        working-directory: contracts
+      - run: pnpm --filter @keelson/e2e test:e2e
 
   live:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
