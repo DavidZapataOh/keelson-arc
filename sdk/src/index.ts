@@ -3,6 +3,8 @@ export * from "./compliance.ts";
 export * from "./credential.ts";
 export * from "./disclosure.ts";
 export * from "./merkle.ts";
+export * from "./parameters.ts";
 export { hash } from "./poseidon.ts";
 export * from "./proof.ts";
+export * from "./snapshot.ts";
 export * from "./sorted-tree.ts";

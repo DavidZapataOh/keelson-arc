@@ -90,3 +90,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @keelson/sdk test:live
+      - run: pnpm --filter @keelson/lists test:live
