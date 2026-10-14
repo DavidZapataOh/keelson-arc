@@ -3,6 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { loadDeployment } from "./deployment/load.ts";
 import { ListsProvider } from "./lists/context.tsx";
 import type { ListsEngine } from "./lists/engine.ts";
+import { Trade } from "./pages/Trade.tsx";
 import { Trades } from "./pages/Trades.tsx";
 import { Connect } from "./shell/Connect.tsx";
 import { DeploymentFailed, Loading, WrongNetwork } from "./shell/states.tsx";
@@ -26,12 +27,15 @@ type Boot =
   | { state: "failed"; error: Error }
   | { state: "ready"; chain: Chain };
 
-const readRoute = (): RouteId => {
-  const id = window.location.hash.replace(/^#\//, "").split("/")[0];
-  return ROUTES.find((route) => route.id === id)?.id ?? "trades";
+type Route = { id: RouteId | "trade"; param: string };
+
+const readRoute = (): Route => {
+  const [id = "", ...rest] = window.location.hash.replace(/^#\//, "").split("/");
+  if (id === "trade" && rest.length > 0) return { id: "trade", param: rest.join("/") };
+  return { id: ROUTES.find((route) => route.id === id)?.id ?? "trades", param: "" };
 };
 
-function useRoute(): RouteId {
+function useRoute(): Route {
   const [route, setRoute] = useState(readRoute);
   useEffect(() => {
     const onChange = () => setRoute(readRoute());
@@ -69,7 +73,11 @@ export function App({
       <a className="skip" href="#main">
         Skip to content
       </a>
-      <TopBar route={route} session={session} onDisconnect={disconnect} />
+      <TopBar
+        route={route.id === "trade" ? "trades" : route.id}
+        session={session}
+        onDisconnect={disconnect}
+      />
       <main id="main">
         {boot.state === "loading" && <Loading />}
         {boot.state === "failed" && <DeploymentFailed error={boot.error} onRetry={start} />}
@@ -90,9 +98,10 @@ export function App({
               {session && !wrongChain && (
                 <AppProvider value={{ chain: boot.chain, session }}>
                   <Suspense fallback={<Loading />}>
-                    {route === "trades" && <Trades />}
-                    {route === "credential" && <Credential />}
-                    {route === "lists" && <Lists />}
+                    {route.id === "trades" && <Trades />}
+                    {route.id === "trade" && <Trade fragment={route.param} />}
+                    {route.id === "credential" && <Credential />}
+                    {route.id === "lists" && <Lists />}
                   </Suspense>
                 </AppProvider>
               )}
