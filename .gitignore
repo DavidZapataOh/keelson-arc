@@ -9,3 +9,6 @@ contracts/broadcast
 .DS_Store
 circuits/build
 circuits/.cache
+app/dist
+app/test-results
+app/playwright-report

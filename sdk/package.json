@@ -19,6 +19,11 @@
     "vitest": "5.0.4"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./abi": "./src/abi.ts",
+    "./arc": "./src/arc.ts",
+    "./fees": "./src/fees.ts",
+    "./trade": "./src/trade.ts",
+    "./tx": "./src/tx.ts"
   }
 }
