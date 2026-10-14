@@ -1,0 +1,21 @@
+{
+  "name": "keelson",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@11.27.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "doctor": "scripts/doctor.sh",
+    "lint": "biome ci .",
+    "format": "biome format --write .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:contracts": "cd contracts && arc-forge test --network arc",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:contracts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15"
+  }
+}
