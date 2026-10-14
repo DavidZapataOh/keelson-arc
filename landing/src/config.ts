@@ -1,0 +1,3 @@
+export const repoUrl = "https://github.com/DavidZapataOh/keelson-arc";
+
+export const appUrl: string = import.meta.env.PUBLIC_APP_URL ?? repoUrl;

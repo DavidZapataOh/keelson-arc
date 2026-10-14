@@ -5,7 +5,7 @@ packages:
   - issuer
   - keeper
   - e2e
-  - app
+  - landing
 
 allowBuilds:
   blake-hash: true
