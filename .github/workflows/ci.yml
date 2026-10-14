@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typescript:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  contracts:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - name: Install Arc Foundry
+        run: |
+          base=https://github.com/circlefin/arc-foundry/releases/download/v0.8.0-2
+          archive=arc-foundry-v0.8.0-2-x86_64-unknown-linux-gnu.tar.gz
+          curl -sSfL -o "$archive" "$base/$archive"
+          echo "088bdb96a84418b757f9825d491e702792f1d1d1e29a9145af305a6600a79556  $archive" | sha256sum -c -
+          tar -xzf "$archive"
+          mkdir -p "$HOME/.local/bin"
+          mv forge "$HOME/.local/bin/arc-forge"
+          mv cast "$HOME/.local/bin/arc-cast"
+          mv anvil "$HOME/.local/bin/arc-anvil"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: arc-forge --version
+      - run: arc-forge fmt --check
+        working-directory: contracts
+      - run: arc-forge lint
+        working-directory: contracts
+      - run: arc-forge build
+        working-directory: contracts
+      - run: arc-forge test --network arc
+        working-directory: contracts
+      - run: arc-forge snapshot --network arc --check
+        working-directory: contracts
+
+  live:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @keelson/sdk test:live
