@@ -1,4 +1,10 @@
-import { complianceInput, decryptSubject, nullifierOf, subjectOf } from "@keelson/sdk";
+import {
+  complianceInput,
+  decryptSubject,
+  nullifierOf,
+  signCredential,
+  subjectOf,
+} from "@keelson/sdk";
 import { beforeAll, describe, expect, it } from "vitest";
 import { credential, otherIssuer, regulatorSecret, request } from "./compliance.fixtures.ts";
 import { compileFixture } from "./support.ts";
@@ -33,7 +39,11 @@ describe("Compliance", () => {
   });
 
   it("rejects an issuer that is not in the issuers root", async () => {
-    const forged = complianceInput({ ...request, issuer: otherIssuer });
+    const forged = complianceInput({
+      ...request,
+      issuerKey: otherIssuer,
+      signature: signCredential(otherIssuer, credential),
+    });
     await expect(run(forged)).rejects.toThrow();
   });
 

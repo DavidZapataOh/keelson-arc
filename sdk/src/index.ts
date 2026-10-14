@@ -1,4 +1,5 @@
 export * from "./arc.ts";
+export * from "./codec.ts";
 export * from "./compliance.ts";
 export * from "./credential.ts";
 export * from "./disclosure.ts";

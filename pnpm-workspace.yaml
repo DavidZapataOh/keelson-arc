@@ -2,6 +2,7 @@ packages:
   - sdk
   - circuits
   - lists
+  - issuer
   - app
 
 allowBuilds:

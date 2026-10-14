@@ -1,12 +1,12 @@
-import type { Credential, Issuer } from "./credential.ts";
-import { signCredential } from "./credential.ts";
+import type { Credential, IssuerKey, Signature } from "./credential.ts";
 import type { Point } from "./disclosure.ts";
 import type { MerkleTree } from "./merkle.ts";
 import type { SortedTree } from "./sorted-tree.ts";
 
 export type ComplianceRequest = {
   credential: Credential;
-  issuer: Issuer;
+  signature: Signature;
+  issuerKey: IssuerKey;
   issuers: MerkleTree;
   issuerIndex: number;
   sanctions: SortedTree;
@@ -21,7 +21,7 @@ export type ComplianceRequest = {
 
 /** Builds the input object of the Compliance circuit; throws if the holder is not eligible. */
 export const complianceInput = (request: ComplianceRequest) => {
-  const { credential, issuer } = request;
+  const { credential, issuerKey } = request;
   const issuerPath = request.issuers.prove(request.issuerIndex);
   const revocation = request.revocations.prove(credential.credentialId);
   const sanctions = credential.identifiers.map((id) => request.sanctions.prove(id));
@@ -43,9 +43,9 @@ export const complianceInput = (request: ComplianceRequest) => {
     jurisdiction: credential.jurisdiction,
     expiry: credential.expiry,
     identifiers: credential.identifiers,
-    issuerAx: issuer.Ax,
-    issuerAy: issuer.Ay,
-    ...signCredential(issuer, credential),
+    issuerAx: issuerKey.Ax,
+    issuerAy: issuerKey.Ay,
+    ...request.signature,
     issuerSiblings: issuerPath.siblings,
     issuerPathBits: issuerPath.pathBits,
     sanctionsLow: sanctions.map((w) => w.low),

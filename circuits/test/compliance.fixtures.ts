@@ -7,6 +7,7 @@ import {
   MerkleTree,
   regulatorPublicKey,
   SortedTree,
+  signCredential,
 } from "@keelson/sdk";
 
 export const issuer: Issuer = issuerFromKey(new Uint8Array(32).fill(7));
@@ -29,7 +30,8 @@ export const regulatorSecret = 987654321n;
 
 export const request: ComplianceRequest = {
   credential,
-  issuer,
+  signature: signCredential(issuer, credential),
+  issuerKey: issuer,
   issuers,
   issuerIndex: 0,
   sanctions,

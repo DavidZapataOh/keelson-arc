@@ -18,6 +18,7 @@ export class SortedTree {
   readonly root: bigint;
   private readonly leaves: Leaf[];
   private readonly tree: MerkleTree;
+  private readonly members: Set<bigint>;
 
   constructor(depth: number, values: bigint[]) {
     this.depth = depth;
@@ -26,12 +27,17 @@ export class SortedTree {
       throw new Error("values must be in (0, 2^248 - 1)");
     }
     const chain = [0n, ...sorted];
+    this.members = new Set(sorted);
     this.leaves = chain.map((low, i) => ({ low, next: chain[i + 1] ?? MAX_VALUE }));
     this.tree = new MerkleTree(
       depth,
       this.leaves.map((leaf) => hash([leaf.low, leaf.next])),
     );
     this.root = this.tree.root;
+  }
+
+  contains(value: bigint): boolean {
+    return this.members.has(value);
   }
 
   prove(value: bigint): NonMembershipWitness {

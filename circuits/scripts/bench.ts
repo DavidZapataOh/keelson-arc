@@ -8,6 +8,7 @@ import {
   MerkleTree,
   regulatorPublicKey,
   SortedTree,
+  signCredential,
 } from "@keelson/sdk";
 import * as snarkjs from "snarkjs";
 import { buildCircuit } from "./build.ts";
@@ -43,7 +44,8 @@ const vkey = JSON.parse(readFileSync(built.vkey, "utf8"));
 
 const input = complianceInput({
   credential,
-  issuer,
+  signature: signCredential(issuer, credential),
+  issuerKey: issuer,
   issuers: new MerkleTree(4, [issuerLeaf(issuer)]),
   issuerIndex: 0,
   sanctions: new SortedTree(18, [111n, 222n, 333n]),

@@ -34,4 +34,10 @@ describe("SortedTree", () => {
     expect(() => new SortedTree(2, [1n, 2n, 3n])).not.toThrow();
     expect(() => new SortedTree(2, [1n, 2n, 3n, 4n])).toThrow("full");
   });
+
+  it("reports membership without building a proof", () => {
+    expect(tree.contains(10n)).toBe(true);
+    expect(tree.contains(15n)).toBe(false);
+    expect(tree.contains(0n)).toBe(false);
+  });
 });

@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   type Credential,
+  claimsMessage,
+  claimsOf,
   credentialMessage,
+  holdCredential,
   issuerFromKey,
   issuerLeaf,
   nullifierOf,
+  signClaims,
   signCredential,
   subjectOf,
+  verifySignature,
 } from "../src/credential.ts";
 import { hash } from "../src/poseidon.ts";
 
@@ -49,5 +54,44 @@ describe("credential", () => {
     expect(issuerFromKey(new Uint8Array(32).fill(8)).Ax).not.toBe(issuer.Ax);
     expect(issuerLeaf(issuer)).toBe(hash([issuer.Ax, issuer.Ay]));
     expect(signCredential(issuer, credential)).toEqual(signCredential(issuer, credential));
+  });
+  it("signs claims without the secret and the holder can still prove with the result", () => {
+    const issuer = issuerFromKey(new Uint8Array(32).fill(7));
+    const claims = claimsOf(credential);
+    const signature = signClaims(issuer, claims);
+
+    expect(signature).toEqual(signCredential(issuer, credential));
+    expect(claimsMessage(claims)).toBe(credentialMessage(credential));
+    expect(verifySignature(issuer, claims, signature)).toBe(true);
+
+    const held = holdCredential(credential.secret, { claims, signature, issuerKey: issuer });
+    expect(held.credential).toEqual(credential);
+  });
+
+  it("rejects signatures over other claims or by other issuers", () => {
+    const issuer = issuerFromKey(new Uint8Array(32).fill(7));
+    const other = issuerFromKey(new Uint8Array(32).fill(8));
+    const claims = claimsOf(credential);
+    const signature = signClaims(issuer, claims);
+
+    expect(verifySignature(issuer, { ...claims, tier: 3n }, signature)).toBe(false);
+    expect(verifySignature(other, claims, signature)).toBe(false);
+  });
+
+  it("refuses to hold a credential issued to someone else or with a bad signature", () => {
+    const issuer = issuerFromKey(new Uint8Array(32).fill(7));
+    const claims = claimsOf(credential);
+    const signature = signClaims(issuer, claims);
+
+    expect(() =>
+      holdCredential(credential.secret + 1n, { claims, signature, issuerKey: issuer }),
+    ).toThrow("another subject");
+    expect(() =>
+      holdCredential(credential.secret, {
+        claims: { ...claims, tier: 3n },
+        signature,
+        issuerKey: issuer,
+      }),
+    ).toThrow("signature is invalid");
   });
 });

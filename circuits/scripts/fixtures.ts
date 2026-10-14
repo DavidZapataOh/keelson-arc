@@ -8,6 +8,7 @@ import {
   MerkleTree,
   regulatorPublicKey,
   SortedTree,
+  signCredential,
   toCalldata,
 } from "@keelson/sdk";
 import * as snarkjs from "snarkjs";
@@ -44,7 +45,8 @@ export async function writeFixtures(built: BuildResult, out: string): Promise<vo
   for (const [name, { credential, address }] of Object.entries(parties)) {
     const input = complianceInput({
       credential,
-      issuer,
+      signature: signCredential(issuer, credential),
+      issuerKey: issuer,
       issuers,
       issuerIndex: 0,
       sanctions,
