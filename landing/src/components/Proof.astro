@@ -14,6 +14,7 @@ const gates = [
     </div>
 
     <div class="track" id="track">
+      <div class="rail">
       <div class="beam" id="proof-beam" aria-hidden="true"><i></i></div>
 
       <div class="node start mono">
@@ -30,12 +31,18 @@ const gates = [
             </p>
             <div class="door" aria-hidden="true">
               <svg viewBox="0 0 196 292" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
-                <path class="depth" d="M10 22 L162 66 Q170 68 170 77 V229 Q170 238 162 240 L10 284 Q2 286 2 278 V30 Q2 24 10 22Z" fill="var(--bone)" />
-                <path class="face" d="M16 14 L168 58 Q176 60 176 69 V221 Q176 230 168 232 L16 276 Q8 278 8 270 V22 Q8 16 16 14Z" />
-                <ellipse class="ap" cx="100" cy="146" rx="40" ry="54" fill="var(--bone)" />
-                {i < 2 && <path class="lip" d="M64 124 C58 150 66 178 94 198" stroke-width="5" stroke-linecap="round" />}
+                <path d="M10 22 L162 66 Q170 68 170 77 V229 Q170 238 162 240 L10 284 Q2 286 2 278 V30 Q2 24 10 22Z M60 146 a40 54 0 1 0 80 0 a40 54 0 1 0 -80 0Z" fill="var(--bone)" fill-rule="evenodd" stroke="none" />
+                <path d="M10 22 L162 66 Q170 68 170 77 V229 Q170 238 162 240 L10 284 Q2 286 2 278 V30 Q2 24 10 22Z" />
+                <path class="face-fill" d="M16 14 L168 58 Q176 60 176 69 V221 Q176 230 168 232 L16 276 Q8 278 8 270 V22 Q8 16 16 14Z M60 146 a40 54 0 1 0 80 0 a40 54 0 1 0 -80 0Z" fill-rule="evenodd" stroke="none" />
+                <path d="M16 14 L168 58 Q176 60 176 69 V221 Q176 230 168 232 L16 276 Q8 278 8 270 V22 Q8 16 16 14Z" />
+                <ellipse class="ap" cx="100" cy="146" rx="40" ry="54" />
+                {i < 2 && <path class="lip" d="M64 118 A40 54 0 0 0 100 200" stroke-width="5" stroke-linecap="round" />}
                 {i === 2 && <path class="tick" d="M80 148 L96 164 L122 128" stroke-width="3" stroke-linecap="round" pathLength="1" />}
               </svg>
+              <i class="thread" />
+              {i < 2 && (
+                <svg class="chev" viewBox="0 0 12 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3l8 9-8 9" /></svg>
+              )}
             </div>
           </div>
         ))
@@ -46,6 +53,8 @@ const gates = [
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 12.5l4 4 8-9" /></svg>
         </span>
         <span>Proof<br />complete</span>
+      </div>
+
       </div>
 
       <div class="strip on-dark mono">
@@ -95,9 +104,13 @@ const gates = [
     align-items: start;
   }
 
+  .rail {
+    display: contents;
+  }
+
   .beam {
     position: relative;
-    z-index: 2;
+    z-index: 0;
     grid-row: 2;
     grid-column: 1 / -1;
     align-self: center;
@@ -156,7 +169,6 @@ const gates = [
     z-index: 1;
     justify-self: start;
     width: min(100% - 32px, 236px);
-    margin-top: -6px;
     color: var(--graphite);
   }
 
@@ -166,12 +178,36 @@ const gates = [
     overflow: visible;
   }
 
-  .ap,
-  .lip {
+  .thread {
+    position: absolute;
+    left: 50%;
+    width: 47%;
+    top: 50%;
+    height: var(--beam);
+    transform: translateY(-50%);
+    transform-origin: left;
+    background: var(--vermilion);
+  }
+
+  .ap {
     transition: stroke 240ms var(--ease-out);
   }
 
-  .last .face {
+  .door .chev {
+    position: absolute;
+    left: calc(100% + 24px);
+    top: calc(50% - 56px);
+    width: 14px;
+    height: 28px;
+    transform: translateY(-50%);
+    overflow: visible;
+  }
+
+  .face-fill {
+    fill: var(--bone);
+  }
+
+  .last .face-fill {
     fill: var(--vermilion);
   }
 
@@ -264,83 +300,98 @@ const gates = [
 
   @media (max-width: 820px) {
     .track {
-      grid-template-columns: 1fr;
-      grid-template-rows: none;
-      padding-left: 40px;
-      row-gap: 36px;
+      display: block;
     }
 
-    .gate {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 20px;
+    .rail {
+      position: relative;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-    }
-
-    .gate .claim,
-    .gate .door {
-      grid-column: auto !important;
-      grid-row: 1;
-    }
-
-    .gate .door {
-      grid-column: 1 !important;
-      width: 120px;
-      margin: 0;
-    }
-
-    .gate .claim {
-      grid-column: 2 !important;
-      padding: 0;
-    }
-
-    .node {
-      grid-row: auto;
-      grid-column: 1 !important;
-      justify-items: start;
-      grid-auto-flow: column;
-      align-items: center;
-      padding: 0;
-      text-align: left;
-    }
-
-    .node.end {
-      order: 5;
-    }
-
-    .dot {
-      margin-top: 0;
-    }
-
-    .strip {
-      order: 6;
-      grid-row: auto;
-      grid-column: 1;
-      grid-template-columns: 1fr;
-      margin-top: 0;
-    }
-
-    .strip div + div {
-      border-left: 0;
-      border-top: 1px solid #2e3036;
+      gap: 40px;
+      padding-block: 8px;
     }
 
     .beam {
       position: absolute;
-      left: 8px;
-      margin: 0;
+      grid-row: auto;
+      grid-column: auto;
+      left: 50%;
       top: 20px;
-      bottom: 220px;
       width: 24px;
-      height: auto;
+      height: calc(100% - 100px);
+      align-self: auto;
+      margin: 0 0 0 -12px;
       clip-path: inset(0 0 calc((1 - var(--p, 1)) * 100%) 0);
     }
 
     .beam i {
       inset: 0 auto 0 50%;
       width: var(--beam);
-      height: auto;
+      height: 100%;
       transform: translateX(-50%);
+    }
+
+    .gate {
+      display: grid;
+      justify-items: center;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .gate .claim,
+    .gate .door {
+      grid-column: auto !important;
+      grid-row: auto;
+    }
+
+    .claim {
+      position: relative;
+      z-index: 1;
+      padding: 8px 14px;
+      text-align: center;
+      max-width: 30ch;
+      background: var(--bg);
+    }
+
+    .door {
+      justify-self: center;
+      width: min(60vw, 190px);
+      margin: 0;
+    }
+
+    .thread {
+      left: 50%;
+      width: var(--beam);
+      top: 50%;
+      height: 44%;
+      transform: translateX(-50%);
+      transform-origin: top;
+    }
+
+    .door .chev {
+      display: none;
+    }
+
+    .node {
+      grid-row: auto;
+      grid-column: auto;
+      padding: 0;
+      justify-content: flex-start;
+    }
+
+    .node.end {
+      order: 5;
+    }
+
+    .strip {
+      margin-top: 40px;
+      grid-template-columns: 1fr;
+    }
+
+    .strip div + div {
+      border-left: 0;
+      border-top: 1px solid #2e3036;
     }
   }
 </style>
