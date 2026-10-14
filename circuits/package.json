@@ -6,7 +6,8 @@
     "typecheck": "tsc",
     "test": "vitest run",
     "build:circuit": "node scripts/cli.ts",
-    "bench": "node scripts/bench.ts"
+    "bench": "node scripts/bench.ts",
+    "export:contracts": "node scripts/export.ts"
   },
   "dependencies": {
     "circomlib": "2.0.5",

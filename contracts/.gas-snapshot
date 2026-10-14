@@ -1,1 +1,8 @@
 ArcRuntimeTest:test_NativeValueToZeroAddressFails() (gas: 35152)
+ComplianceVerifierTest:test_AcceptsValidProof() (gas: 319218)
+ComplianceVerifierTest:test_MalformedPointsCannotBurnTheGasLimit() (gas: 340169)
+ComplianceVerifierTest:test_RejectsAlteredProofElements() (gas: 592257)
+ComplianceVerifierTest:test_RejectsAnyAlteredSignal() (gas: 3602495)
+ComplianceVerifierTest:test_RejectsSignalOutsideTheField() (gas: 53259)
+ComplianceVerifierTest:test_RevertsOnPointsOffTheCurve() (gas: 341253)
+ComplianceVerifierTest:test_VerificationGas() (gas: 321194)
