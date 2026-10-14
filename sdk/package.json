@@ -4,15 +4,19 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc",
-    "test": "vitest run --passWithNoTests --exclude 'test/live/**'",
+    "test": "vitest run --exclude 'test/live/**'",
     "test:live": "vitest run test/live"
   },
   "dependencies": {
-    "viem": "2.57.5"
+    "viem": "2.57.5",
+    "circomlibjs": "0.1.7"
   },
   "devDependencies": {
     "@types/node": "24.0.0",
     "typescript": "7.0.2",
     "vitest": "5.0.4"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }

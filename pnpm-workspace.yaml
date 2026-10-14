@@ -2,3 +2,6 @@ packages:
   - sdk
   - circuits
   - app
+
+allowBuilds:
+  blake-hash: true

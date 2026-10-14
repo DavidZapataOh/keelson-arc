@@ -26,6 +26,18 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - name: Install circom
+        run: |
+          curl -sSfL -o circom https://github.com/iden3/circom/releases/download/v2.2.3/circom-linux-amd64
+          echo "85342c7ff332d948df7c0c50ecf201e6129349aef550ce873f3c811b79fe53a3  circom" | sha256sum -c -
+          chmod +x circom
+          mkdir -p "$HOME/.local/bin"
+          mv circom "$HOME/.local/bin/circom"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: actions/cache@v6.1.0
+        with:
+          path: circuits/.cache
+          key: ptau-v1
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
