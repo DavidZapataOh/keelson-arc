@@ -8,6 +8,14 @@ const env = {
   SANCTIONS_SNAPSHOT: "sanctions.json",
 };
 
+const DEMO_ENV = {
+  DEMO_TIER: "2",
+  DEMO_JURISDICTION: "840",
+  DEMO_VALIDITY_SECONDS: "604800",
+  DEMO_PER_HOUR: "10",
+  DEMO_PER_DAY: "500",
+};
+
 describe("loadConfig", () => {
   it("applies safe defaults", () => {
     const config = loadConfig(env);
@@ -20,19 +28,24 @@ describe("loadConfig", () => {
     const config = loadConfig(env);
     expect(config.allowedOrigins).toEqual([]);
     expect(config.listsDir).toBeUndefined();
-    expect(config.demo).toBe(false);
+    expect(config.demo).toBeUndefined();
     const on = loadConfig({
       ...env,
       ALLOWED_ORIGIN: "https://app.example.org, https://beta.example.org",
       LISTS_DIR: "/data",
       DEMO_MODE: "testnet",
+      ...DEMO_ENV,
     });
     expect(on).toMatchObject({
       allowedOrigins: ["https://app.example.org", "https://beta.example.org"],
       listsDir: "/data",
-      demo: true,
+      demo: { tier: 2, jurisdiction: 840, validitySeconds: 604800, perHour: 10, perDay: 500 },
     });
-    expect(loadConfig({ ...env, DEMO_MODE: "1" }).demo).toBe(false);
+    expect(loadConfig({ ...env, DEMO_MODE: "1" }).demo).toBeUndefined();
+    expect(() => loadConfig({ ...env, DEMO_MODE: "testnet" })).toThrow("DEMO_TIER");
+    expect(() =>
+      loadConfig({ ...env, DEMO_MODE: "testnet", ...DEMO_ENV, DEMO_PER_DAY: "0" }),
+    ).toThrow("DEMO_PER_DAY");
     expect(() => loadConfig({ ...env, ALLOWED_ORIGIN: "app.example.org/path" })).toThrow(
       "ALLOWED_ORIGIN",
     );

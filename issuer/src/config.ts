@@ -1,3 +1,11 @@
+export type DemoConfig = {
+  tier: number;
+  jurisdiction: number;
+  validitySeconds: number;
+  perHour: number;
+  perDay: number;
+};
+
 export type Config = {
   host: string;
   port: number;
@@ -8,7 +16,7 @@ export type Config = {
   sanctionsSnapshot: string;
   allowedOrigins: string[];
   listsDir: string | undefined;
-  demo: boolean;
+  demo: DemoConfig | undefined;
 };
 
 const required = (env: NodeJS.ProcessEnv, name: string): string => {
@@ -30,6 +38,24 @@ const origins = (value: string | undefined): string[] => {
     }
   }
   return list;
+};
+
+const positive = (env: NodeJS.ProcessEnv, name: string): number => {
+  const value = Number(required(env, name));
+  if (!Number.isSafeInteger(value) || value <= 0)
+    throw new Error(`${name} must be a positive integer`);
+  return value;
+};
+
+const demo = (env: NodeJS.ProcessEnv): DemoConfig | undefined => {
+  if (env.DEMO_MODE !== "testnet") return undefined;
+  return {
+    tier: positive(env, "DEMO_TIER"),
+    jurisdiction: positive(env, "DEMO_JURISDICTION"),
+    validitySeconds: positive(env, "DEMO_VALIDITY_SECONDS"),
+    perHour: positive(env, "DEMO_PER_HOUR"),
+    perDay: positive(env, "DEMO_PER_DAY"),
+  };
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -56,6 +82,6 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     sanctionsSnapshot: required(env, "SANCTIONS_SNAPSHOT"),
     allowedOrigins: origins(env.ALLOWED_ORIGIN),
     listsDir: env.LISTS_DIR || undefined,
-    demo: env.DEMO_MODE === "testnet",
+    demo: demo(env),
   };
 }

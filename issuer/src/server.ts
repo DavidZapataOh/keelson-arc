@@ -4,6 +4,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { join } from "node:path";
 import type { Identifier } from "@keelson/lists";
 import { issuedToJson } from "@keelson/sdk";
+import type { DemoConfig } from "./config.ts";
 import { type IssueRequest, type IssuerService, RequestError } from "./service.ts";
 
 const MAX_BODY = 16 * 1024;
@@ -13,15 +14,12 @@ export type Tokens = { adminToken: string; regulatorToken: string };
 export type Options = Tokens & {
   allowedOrigins?: string[] | undefined;
   listsDir?: string | undefined;
-  demo?: boolean | undefined;
+  demo?: DemoConfig | undefined;
   /** Milliseconds since the epoch; tests replace it. */
   now?: (() => number) | undefined;
 };
 
 const LIST_FILES = new Set(["sanctions-latest.json", "revocations-latest.json"]);
-const DEMO_PER_HOUR = 10;
-const DEMO_PER_DAY = 500;
-const DEMO_VALIDITY_SECONDS = 7 * 24 * 3600;
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
 
@@ -123,7 +121,7 @@ export function createApp(service: IssuerService, options: Options): Server {
     response.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
   };
 
-  const demoCredential = (request: IncomingMessage, body: unknown) => {
+  const demoCredential = (demo: DemoConfig, request: IncomingMessage, body: unknown) => {
     const input = (body ?? {}) as Record<string, unknown>;
     const address = input.address;
     if (typeof address !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
@@ -132,16 +130,16 @@ export function createApp(service: IssuerService, options: Options): Server {
     const now = (options.now ?? Date.now)();
     const client = perClient.get(clientOf(request)) ?? new Window(3600 * 1000);
     perClient.set(clientOf(request), client);
-    if (client.count(now) >= DEMO_PER_HOUR || perDay.count(now) >= DEMO_PER_DAY) {
+    if (client.count(now) >= demo.perHour || perDay.count(now) >= demo.perDay) {
       throw new RequestError("too many demo credentials requested, try again later");
     }
     client.add(now);
     perDay.add(now);
     return service.issue({
       subject: decimal(input.subject, "subject"),
-      tier: 2,
-      jurisdiction: 840,
-      expiry: Math.floor(now / 1000) + DEMO_VALIDITY_SECONDS,
+      tier: demo.tier,
+      jurisdiction: demo.jurisdiction,
+      expiry: Math.floor(now / 1000) + demo.validitySeconds,
       identifiers: [
         { kind: "address", value: address },
         { kind: "id", value: `demo ${randomBytes(12).toString("hex")}` },
@@ -195,7 +193,8 @@ export function createApp(service: IssuerService, options: Options): Server {
       }
 
       if (route === "POST /demo/credentials" && options.demo) {
-        return send(response, 201, issuedToJson(demoCredential(request, await readJson(request))));
+        const issued = demoCredential(options.demo, request, await readJson(request));
+        return send(response, 201, issuedToJson(issued));
       }
 
       if (route === "POST /credentials" || route === "POST /revocations") {

@@ -203,6 +203,13 @@ describe("serving browsers", () => {
   });
 
   describe("the testnet demo faucet", () => {
+    const DEMO = {
+      tier: 2,
+      jurisdiction: 840,
+      validitySeconds: 7 * 24 * 3600,
+      perHour: 10,
+      perDay: 500,
+    };
     const demo = (subject: string, address: string) => ({
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -217,7 +224,7 @@ describe("serving browsers", () => {
     });
 
     it("issues a verifiable credential to anyone, for the address they give", async () => {
-      await withApp({ demo: true }, async (get) => {
+      await withApp({ demo: DEMO }, async (get) => {
         const response = await get("/demo/credentials", demo("7", holder));
         expect(response.status).toBe(201);
         const issued = issuedFromJson(await response.json());
@@ -227,8 +234,25 @@ describe("serving browsers", () => {
       });
     });
 
+    it("issues what the configuration says and nothing else", async () => {
+      const custom = { tier: 3, jurisdiction: 276, validitySeconds: 3600, perHour: 2, perDay: 3 };
+      await withApp({ demo: custom, now: () => NOW * 1000 }, async (get) => {
+        const issued = issuedFromJson(
+          await (await get("/demo/credentials", demo("7", holder))).json(),
+        );
+        expect(issued.claims.tier).toBe(3n);
+        expect(issued.claims.jurisdiction).toBe(276n);
+        expect(issued.claims.expiry).toBe(BigInt(NOW + 3600));
+        const statuses = [];
+        for (let i = 0; i < 3; i++) {
+          statuses.push((await get("/demo/credentials", demo(String(i + 8), holder))).status);
+        }
+        expect(statuses).toEqual([201, 400, 400]);
+      });
+    });
+
     it("refuses a malformed request and a sanctioned address", async () => {
-      await withApp({ demo: true }, async (get) => {
+      await withApp({ demo: DEMO }, async (get) => {
         expect((await get("/demo/credentials", demo("abc", holder))).status).toBe(400);
         expect((await get("/demo/credentials", demo("7", "0x12"))).status).toBe(400);
         expect((await get("/demo/credentials", demo("7", sanctionedAddress))).status).toBe(400);
@@ -236,7 +260,7 @@ describe("serving browsers", () => {
     });
 
     it("limits how many credentials one client can ask for in an hour", async () => {
-      await withApp({ demo: true }, async (get) => {
+      await withApp({ demo: DEMO }, async (get) => {
         const statuses: number[] = [];
         for (let i = 0; i < 12; i++) {
           statuses.push((await get("/demo/credentials", demo(String(i + 1), holder))).status);
