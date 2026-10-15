@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/dist-*
+.git
+app
+landing
+e2e
+circuits/build
+circuits/.cache
+contracts/lib
+contracts/out
+contracts/cache
+contracts/broadcast

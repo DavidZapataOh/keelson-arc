@@ -14,3 +14,4 @@ app/test-results
 app/playwright-report
 app/dist-real
 app/dist-testnet
+app/dist-site

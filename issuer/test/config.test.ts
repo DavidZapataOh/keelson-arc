@@ -16,6 +16,28 @@ describe("loadConfig", () => {
     expect(config.issuerPrivateKey).toHaveLength(32);
   });
 
+  it("keeps the public extras off by default and validates them", () => {
+    const config = loadConfig(env);
+    expect(config.allowedOrigin).toBeUndefined();
+    expect(config.listsDir).toBeUndefined();
+    expect(config.demo).toBe(false);
+    const on = loadConfig({
+      ...env,
+      ALLOWED_ORIGIN: "https://app.example.org",
+      LISTS_DIR: "/data",
+      DEMO_MODE: "testnet",
+    });
+    expect(on).toMatchObject({
+      allowedOrigin: "https://app.example.org",
+      listsDir: "/data",
+      demo: true,
+    });
+    expect(loadConfig({ ...env, DEMO_MODE: "1" }).demo).toBe(false);
+    expect(() => loadConfig({ ...env, ALLOWED_ORIGIN: "app.example.org/path" })).toThrow(
+      "ALLOWED_ORIGIN",
+    );
+  });
+
   it("rejects missing, short, identical or malformed secrets", () => {
     expect(() => loadConfig({ ...env, ISSUER_PRIVATE_KEY: undefined })).toThrow(
       "ISSUER_PRIVATE_KEY is required",

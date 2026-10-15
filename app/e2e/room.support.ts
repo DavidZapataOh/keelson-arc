@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { answer, FILE } from "../test/support/fakeChain.ts";
+import { answerBatched } from "../test/support/multicall.ts";
 import { answerWorld, type World } from "../test/support/world.ts";
 import { cors } from "./support.ts";
 
@@ -27,7 +28,11 @@ export async function serveChain(page: Page, world: World) {
     };
     return route.fulfill({
       headers: cors,
-      json: { jsonrpc: "2.0", id: body.id, result: respond(world, body.method, body.params ?? []) },
+      json: {
+        jsonrpc: "2.0",
+        id: body.id,
+        result: answerBatched(body.method, body.params ?? [], (m, p) => respond(world, m, p)),
+      },
     });
   });
   for (const list of ["sanctions-latest.json", "revocations-latest.json"]) {

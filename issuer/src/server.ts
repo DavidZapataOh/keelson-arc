@@ -1,5 +1,7 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { join } from "node:path";
 import type { Identifier } from "@keelson/lists";
 import { issuedToJson } from "@keelson/sdk";
 import { type IssueRequest, type IssuerService, RequestError } from "./service.ts";
@@ -7,6 +9,19 @@ import { type IssueRequest, type IssuerService, RequestError } from "./service.t
 const MAX_BODY = 16 * 1024;
 
 export type Tokens = { adminToken: string; regulatorToken: string };
+
+export type Options = Tokens & {
+  allowedOrigin?: string | undefined;
+  listsDir?: string | undefined;
+  demo?: boolean | undefined;
+  /** Milliseconds since the epoch; tests replace it. */
+  now?: (() => number) | undefined;
+};
+
+const LIST_FILES = new Set(["sanctions-latest.json", "revocations-latest.json"]);
+const DEMO_PER_HOUR = 10;
+const DEMO_PER_DAY = 500;
+const DEMO_VALIDITY_SECONDS = 7 * 24 * 3600;
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
 
@@ -65,12 +80,82 @@ export function parseIssueRequest(body: unknown): IssueRequest {
   };
 }
 
+/** Counts events inside a sliding window; used to keep the demo faucet from being drained. */
+class Window {
+  private readonly times: number[] = [];
+  private readonly span: number;
+
+  constructor(span: number) {
+    this.span = span;
+  }
+
+  count(now: number): number {
+    while (this.times.length > 0 && (this.times[0] as number) <= now - this.span)
+      this.times.shift();
+    return this.times.length;
+  }
+
+  add(now: number) {
+    this.times.push(now);
+  }
+}
+
+const clientOf = (request: IncomingMessage): string => {
+  const forwarded = request.headers["x-forwarded-for"];
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim();
+  return first || request.socket.remoteAddress || "unknown";
+};
+
 /** HTTP interface of the issuer. Issuing, revoking and lookups require a bearer token. */
-export function createApp(service: IssuerService, tokens: Tokens): Server {
+export function createApp(service: IssuerService, options: Options): Server {
+  const tokens = options;
+  const perClient = new Map<string, Window>();
+  const perDay = new Window(24 * 3600 * 1000);
+
+  const cors = (response: ServerResponse) => {
+    if (!options.allowedOrigin) return;
+    response.setHeader("access-control-allow-origin", options.allowedOrigin);
+    response.setHeader("access-control-allow-headers", "content-type");
+    response.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
+  };
+
+  const demoCredential = (request: IncomingMessage, body: unknown) => {
+    const input = (body ?? {}) as Record<string, unknown>;
+    const address = input.address;
+    if (typeof address !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      throw new RequestError("address must be a wallet address");
+    }
+    const now = (options.now ?? Date.now)();
+    const client = perClient.get(clientOf(request)) ?? new Window(3600 * 1000);
+    perClient.set(clientOf(request), client);
+    if (client.count(now) >= DEMO_PER_HOUR || perDay.count(now) >= DEMO_PER_DAY) {
+      throw new RequestError("too many demo credentials requested, try again later");
+    }
+    client.add(now);
+    perDay.add(now);
+    return service.issue({
+      subject: decimal(input.subject, "subject"),
+      tier: 2,
+      jurisdiction: 840,
+      expiry: Math.floor(now / 1000) + DEMO_VALIDITY_SECONDS,
+      identifiers: [
+        { kind: "address", value: address },
+        { kind: "id", value: `demo ${randomBytes(12).toString("hex")}` },
+      ],
+      entityRef: `demo ${address.toLowerCase()}`,
+    });
+  };
+
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", "http://issuer");
       const route = `${request.method} ${url.pathname}`;
+      cors(response);
+
+      if (request.method === "OPTIONS") {
+        response.writeHead(204);
+        return response.end();
+      }
 
       if (route === "GET /health") return send(response, 200, { ok: true });
       if (route === "GET /issuer") {
@@ -84,6 +169,29 @@ export function createApp(service: IssuerService, tokens: Tokens): Server {
       }
       if (route === "GET /revocations") {
         return send(response, 200, service.revocations(), "public, max-age=30");
+      }
+
+      const list = url.pathname.match(/^\/lists\/([a-z-]+\.json)$/);
+      if (
+        request.method === "GET" &&
+        list &&
+        options.listsDir &&
+        LIST_FILES.has(list[1] as string)
+      ) {
+        try {
+          const file = await readFile(join(options.listsDir, list[1] as string), "utf8");
+          response.writeHead(200, {
+            "content-type": "application/json",
+            "cache-control": "public, max-age=60",
+          });
+          return response.end(file);
+        } catch {
+          return send(response, 404, { error: "not found" });
+        }
+      }
+
+      if (route === "POST /demo/credentials" && options.demo) {
+        return send(response, 201, issuedToJson(demoCredential(request, await readJson(request))));
       }
 
       if (route === "POST /credentials" || route === "POST /revocations") {

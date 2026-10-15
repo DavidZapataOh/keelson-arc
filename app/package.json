@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:real": "E2E_REAL=1 playwright test",
-    "test:e2e:testnet": "E2E_TESTNET=1 playwright test"
+    "test:e2e:public": "E2E_PUBLIC=1 playwright test"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

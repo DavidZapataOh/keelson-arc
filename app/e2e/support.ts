@@ -4,6 +4,7 @@ import { buildFromSource, openSnapshot, serializeSnapshot } from "@keelson/lists
 import { issuerFromKey, serializeSetSnapshot } from "@keelson/sdk";
 import type { Page } from "@playwright/test";
 import { answer, FILE } from "../test/support/fakeChain.ts";
+import { answerBatched } from "../test/support/multicall.ts";
 
 const SAMPLE = resolve(
   new URL("../../lists/test/fixtures/sdn_advanced_sample.xml", import.meta.url).pathname,
@@ -35,9 +36,9 @@ export async function serveLists(page: Page) {
       json: {
         jsonrpc: "2.0",
         id: body.id,
-        result: answer(body.method, body.params ?? [], {
-          versions: { issuers: 1n, sanctions: 1n, revocations: 1n },
-        }),
+        result: answerBatched(body.method, body.params ?? [], (m, p) =>
+          answer(m, p, { versions: { issuers: 1n, sanctions: 1n, revocations: 1n } }),
+        ),
       },
     });
   });

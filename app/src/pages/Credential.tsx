@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { ImportError, importIssued, requestPackage, statusFrom } from "../credential/credential.ts";
 import { download } from "../export/transaction.ts";
 import { useListsContext } from "../lists/context.tsx";
+import { useApp } from "../state/context.tsx";
 import { useVault } from "../vault/context.tsx";
 import {
   createVault,
@@ -209,6 +210,26 @@ function Held({ vault, onLock }: { vault: Vault; onLock: () => void }) {
   const [copied, setCopied] = useState(false);
   const [revoked, setRevoked] = useState<boolean[]>();
   const action = useAction();
+  const demo = useAction();
+  const { chain, session } = useApp();
+
+  const getDemoCredential = async () => {
+    const response = await fetch(`${chain.file.issuerUrl}/demo/credentials`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        subject: vault.subject.toString(),
+        address: session?.snapshot.address,
+      }),
+    }).catch(() => undefined);
+    if (!response) throw new ImportError("The demo issuer could not be reached.");
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new ImportError(body.error ?? "The demo issuer refused the request.");
+    }
+    await importIssued(vault, await response.text());
+    setCredentials(vault.credentials());
+  };
 
   useEffect(() => {
     if (state.phase !== "ready" || credentials.length === 0) {
@@ -248,6 +269,31 @@ function Held({ vault, onLock }: { vault: Vault; onLock: () => void }) {
           </button>
         </div>
       </div>
+
+      {chain.file.demo && (
+        <div className="panel">
+          <h2>Testnet demo credential</h2>
+          <p className="lede">
+            This is a test network. The demo issuer gives anyone a credential for the address of the
+            connected wallet, with no checks. A real issuer only signs after its own KYC.
+          </p>
+          {demo.error && (
+            <p className="error" role="alert">
+              {demo.error}
+            </p>
+          )}
+          <div className="actions">
+            <button
+              type="button"
+              className="btn"
+              disabled={demo.busy}
+              onClick={() => void demo.run(getDemoCredential)}
+            >
+              {demo.busy ? "Requesting…" : "Get a demo credential"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <form
         className="panel"

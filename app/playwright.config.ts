@@ -2,7 +2,9 @@ import { defineConfig } from "@playwright/test";
 
 const external = process.env.E2E_BASE_URL;
 const real = Boolean(process.env.E2E_REAL);
-const testnet = Boolean(process.env.E2E_TESTNET);
+const publicUrl =
+  process.env.E2E_PUBLIC_URL ??
+  (process.env.E2E_PUBLIC ? "https://keelson-app.vercel.app" : undefined);
 
 const app = {
   command:
@@ -18,24 +20,17 @@ const local = {
   timeout: 900_000,
 };
 
-const remote = {
-  command: "node scripts/serve-testnet.ts",
-  url: "http://127.0.0.1:4393",
-  reuseExistingServer: false,
-  timeout: 900_000,
-};
-
 export default defineConfig({
   reporter: "list",
   testDir: "e2e",
   use: { channel: "chrome" },
-  projects: testnet
+  projects: publicUrl
     ? [
         {
-          name: "testnet",
-          testMatch: /testnet\.spec\.ts/,
+          name: "public",
+          testMatch: /public\.spec\.ts/,
           timeout: 900_000,
-          use: { baseURL: "http://127.0.0.1:4393" },
+          use: { baseURL: publicUrl },
         },
       ]
     : real
@@ -50,9 +45,9 @@ export default defineConfig({
       : [
           {
             name: "app",
-            testIgnore: /(real|testnet)\./,
+            testIgnore: /(real|public)\./,
             use: { baseURL: external ?? "http://127.0.0.1:4391" },
           },
         ],
-  webServer: external ? undefined : testnet ? remote : real ? local : app,
+  webServer: external || publicUrl ? undefined : real ? local : app,
 });

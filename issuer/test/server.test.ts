@@ -2,7 +2,14 @@ import type { AddressInfo } from "node:net";
 import { holdCredential, issuedFromJson, openSetSnapshot, verifySignature } from "@keelson/sdk";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/server.ts";
-import { holderSecret, issuer, newService, validRequest } from "./support.ts";
+import {
+  holderSecret,
+  issuer,
+  NOW,
+  newService,
+  sanctionedAddress,
+  validRequest,
+} from "./support.ts";
 
 const tokens = { adminToken: "a".repeat(40), regulatorToken: "r".repeat(40) };
 const body = (value: unknown) =>
@@ -136,5 +143,97 @@ describe("revocation and lookup", () => {
     const records = await response.json();
     expect(records[0]).toMatchObject({ entityRef: "kyc-case-0001" });
     expect((await call("/subjects/abc", { token: tokens.regulatorToken })).status).toBe(404);
+  });
+});
+
+describe("serving browsers", () => {
+  const withApp = async (
+    options: Record<string, unknown>,
+    run: (call: (path: string, init?: RequestInit) => Promise<Response>) => Promise<void>,
+  ) => {
+    const app = createApp(newService().service, { ...tokens, now: () => NOW * 1000, ...options });
+    await new Promise<void>((resolve) => app.listen(0, "127.0.0.1", resolve));
+    const url = `http://127.0.0.1:${(app.address() as AddressInfo).port}`;
+    try {
+      await run((path, init) => fetch(`${url}${path}`, init));
+    } finally {
+      await new Promise((resolve) => app.close(resolve));
+    }
+  };
+
+  it("sends no CORS headers unless an origin is allowed, and answers preflights when it is", async () => {
+    await withApp({}, async (get) => {
+      expect((await get("/issuer")).headers.get("access-control-allow-origin")).toBeNull();
+    });
+    await withApp({ allowedOrigin: "https://app.example.org" }, async (get) => {
+      const response = await get("/issuer");
+      expect(response.headers.get("access-control-allow-origin")).toBe("https://app.example.org");
+      const preflight = await get("/demo/credentials", { method: "OPTIONS" });
+      expect(preflight.status).toBe(204);
+      expect(preflight.headers.get("access-control-allow-headers")).toBe("content-type");
+    });
+  });
+
+  it("serves only the two published list files from its directory", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const dir = mkdtempSync(join(tmpdir(), "lists-"));
+    writeFileSync(join(dir, "sanctions-latest.json"), '{"root":"0x1"}');
+    writeFileSync(join(dir, "secret.json"), "{}");
+    await withApp({ listsDir: dir }, async (get) => {
+      expect(await (await get("/lists/sanctions-latest.json")).json()).toEqual({ root: "0x1" });
+      expect((await get("/lists/revocations-latest.json")).status).toBe(404);
+      expect((await get("/lists/secret.json")).status).toBe(404);
+      expect((await get("/lists/..%2Fetc%2Fpasswd")).status).toBe(404);
+    });
+    await withApp({}, async (get) => {
+      expect((await get("/lists/sanctions-latest.json")).status).toBe(404);
+    });
+  });
+
+  describe("the testnet demo faucet", () => {
+    const demo = (subject: string, address: string) => ({
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ subject, address }),
+    });
+    const holder = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+
+    it("does not exist unless demo mode is on", async () => {
+      await withApp({}, async (get) => {
+        expect((await get("/demo/credentials", demo("7", holder))).status).toBe(404);
+      });
+    });
+
+    it("issues a verifiable credential to anyone, for the address they give", async () => {
+      await withApp({ demo: true }, async (get) => {
+        const response = await get("/demo/credentials", demo("7", holder));
+        expect(response.status).toBe(201);
+        const issued = issuedFromJson(await response.json());
+        expect(verifySignature(issued.issuerKey, issued.claims, issued.signature)).toBe(true);
+        expect(issued.claims.subject).toBe(7n);
+        expect(issued.claims.tier).toBe(2n);
+      });
+    });
+
+    it("refuses a malformed request and a sanctioned address", async () => {
+      await withApp({ demo: true }, async (get) => {
+        expect((await get("/demo/credentials", demo("abc", holder))).status).toBe(400);
+        expect((await get("/demo/credentials", demo("7", "0x12"))).status).toBe(400);
+        expect((await get("/demo/credentials", demo("7", sanctionedAddress))).status).toBe(400);
+      });
+    });
+
+    it("limits how many credentials one client can ask for in an hour", async () => {
+      await withApp({ demo: true }, async (get) => {
+        const statuses: number[] = [];
+        for (let i = 0; i < 12; i++) {
+          statuses.push((await get("/demo/credentials", demo(String(i + 1), holder))).status);
+        }
+        expect(statuses.filter((s) => s === 201)).toHaveLength(10);
+        expect(statuses.slice(10)).toEqual([400, 400]);
+      });
+    });
   });
 });

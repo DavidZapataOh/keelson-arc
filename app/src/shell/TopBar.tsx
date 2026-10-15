@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { NETWORK_LABEL } from "../chain.ts";
 import type { Session } from "../wallet/session.ts";
 
 export const ROUTES = [
@@ -29,7 +30,7 @@ export function TopBar(props: {
         ))}
       </nav>
       <div className="topbar-end">
-        <span className="badge mono">ARC MAINNET</span>
+        <span className="badge mono">{NETWORK_LABEL}</span>
         {props.session && <WalletMenu session={props.session} onDisconnect={props.onDisconnect} />}
       </div>
     </header>

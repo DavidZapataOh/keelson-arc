@@ -6,11 +6,22 @@ export type Config = {
   adminToken: string;
   regulatorToken: string;
   sanctionsSnapshot: string;
+  allowedOrigin: string | undefined;
+  listsDir: string | undefined;
+  demo: boolean;
 };
 
 const required = (env: NodeJS.ProcessEnv, name: string): string => {
   const value = env[name];
   if (!value) throw new Error(`${name} is required`);
+  return value;
+};
+
+const origin = (value: string | undefined): string | undefined => {
+  if (!value) return undefined;
+  if (value !== "*" && !/^https?:\/\/[^/\s]+$/.test(value)) {
+    throw new Error("ALLOWED_ORIGIN must be an origin such as https://app.example.org");
+  }
   return value;
 };
 
@@ -36,5 +47,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     adminToken,
     regulatorToken,
     sanctionsSnapshot: required(env, "SANCTIONS_SNAPSHOT"),
+    allowedOrigin: origin(env.ALLOWED_ORIGIN),
+    listsDir: env.LISTS_DIR || undefined,
+    demo: env.DEMO_MODE === "testnet",
   };
 }

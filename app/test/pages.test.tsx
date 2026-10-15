@@ -155,6 +155,59 @@ describe("credential page", () => {
     expect(await screen.findByText(/your subject/i)).toBeInTheDocument();
   }, 30_000);
 
+  describe("the testnet demo credential", () => {
+    const demoChain = (): (() => Promise<Chain>) => async () => ({
+      file: { ...FILE, demo: true },
+      client: fakeChain({ versions: { issuers: 1n, sanctions: 7n, revocations: 1n } }),
+    });
+
+    it("is not offered unless the deployment says it is a demo", async () => {
+      const user = await openAt("credential");
+      await createVaultUi(user);
+      expect(screen.queryByRole("button", { name: /get a demo credential/i })).toBeNull();
+    }, 30_000);
+
+    it("asks the issuer for a credential for the connected address and keeps it", async () => {
+      const requests: { url: string; body: { subject: string; address: string } }[] = [];
+      const original = globalThis.fetch;
+      globalThis.fetch = (async (url: string, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body));
+        requests.push({ url, body });
+        return new Response(issuedFor(BigInt(body.subject)), { status: 201 });
+      }) as unknown as typeof fetch;
+      try {
+        const user = await openAt("credential", demoChain());
+        await createVaultUi(user);
+        await user.click(screen.getByRole("button", { name: /get a demo credential/i }));
+        expect(await screen.findByText("Tier 2")).toBeInTheDocument();
+        expect(requests).toHaveLength(1);
+        expect(requests[0]?.url).toBe(`${FILE.issuerUrl}/demo/credentials`);
+        expect(requests[0]?.body.address.toLowerCase()).toBe(
+          "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        );
+      } finally {
+        globalThis.fetch = original;
+      }
+    }, 30_000);
+
+    it("shows why the issuer refused", async () => {
+      const original = globalThis.fetch;
+      globalThis.fetch = (async () =>
+        new Response(
+          JSON.stringify({ error: "too many demo credentials requested, try again later" }),
+          { status: 400 },
+        )) as unknown as typeof fetch;
+      try {
+        const user = await openAt("credential", demoChain());
+        await createVaultUi(user);
+        await user.click(screen.getByRole("button", { name: /get a demo credential/i }));
+        expect(await screen.findByRole("alert")).toHaveTextContent(/too many demo credentials/i);
+      } finally {
+        globalThis.fetch = original;
+      }
+    }, 30_000);
+  });
+
   it("restores a vault from a backup file", async () => {
     const created = await openAt("credential");
     await createVaultUi(created);

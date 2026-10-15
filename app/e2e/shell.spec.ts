@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { answer, FILE } from "../test/support/fakeChain.ts";
+import { answerBatched } from "../test/support/multicall.ts";
 
 async function stub(page: Page, options: { chainId?: number } = {}) {
   await page.route("**/deployment.json", (route) => route.fulfill({ json: FILE }));
@@ -19,7 +20,11 @@ async function stub(page: Page, options: { chainId?: number } = {}) {
     };
     return route.fulfill({
       headers: cors,
-      json: { jsonrpc: "2.0", id: body.id, result: answer(body.method, body.params ?? []) },
+      json: {
+        jsonrpc: "2.0",
+        id: body.id,
+        result: answerBatched(body.method, body.params ?? [], (m, p) => answer(m, p)),
+      },
     });
   });
   await page.addInitScript(

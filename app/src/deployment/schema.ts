@@ -16,6 +16,8 @@ export type DeploymentFile = {
   listsUrl: string;
   assetsUrl: string;
   tokens?: DeploymentToken[];
+  /** Set on testnet deployments whose issuer hands out credentials to anyone. */
+  demo?: boolean;
 };
 
 export type DeploymentFailure =
@@ -44,7 +46,7 @@ const ADDRESS_KEYS = [
   "settlement",
 ] as const;
 const URL_KEYS = ["rpcUrl", "issuerUrl", "listsUrl", "assetsUrl"] as const;
-const KEYS = new Set<string>(["chainId", "tokens", ...ADDRESS_KEYS, ...URL_KEYS]);
+const KEYS = new Set<string>(["chainId", "tokens", "demo", ...ADDRESS_KEYS, ...URL_KEYS]);
 
 const isLocal = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
 
@@ -106,5 +108,11 @@ export function parseDeploymentFile(input: unknown): DeploymentFile {
   }
   for (const key of URL_KEYS) out[key] = checkUrl(key, record[key]);
   if (record.tokens !== undefined) out.tokens = checkTokens(record.tokens);
+  if (record.demo !== undefined) {
+    if (typeof record.demo !== "boolean") {
+      throw new DeploymentError("invalid-file", "demo must be true or false");
+    }
+    out.demo = record.demo;
+  }
   return out as DeploymentFile;
 }
