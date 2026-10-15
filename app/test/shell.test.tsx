@@ -31,6 +31,26 @@ describe("shell", () => {
     await screen.findByRole("heading", { name: /connect a wallet/i });
   });
 
+  it("links to the faucet only when the deployment names one", async () => {
+    const { unmount } = render(<App load={ready} makeEngine={engine} />);
+    await screen.findByRole("heading", { name: /connect a wallet/i });
+    expect(screen.queryByRole("link", { name: /get test funds/i })).toBeNull();
+    unmount();
+    render(
+      <App
+        load={async () => ({
+          file: { ...FILE, faucetUrl: "https://faucet.example.org" },
+          client: fakeChain(),
+        })}
+        makeEngine={engine}
+      />,
+    );
+    const link = await screen.findByRole("link", { name: /get test funds/i });
+    expect(link).toHaveAttribute("href", "https://faucet.example.org");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+  });
+
   it("blocks everything when the deployment cannot be verified, and retries", async () => {
     const load = vi
       .fn<() => ReturnType<typeof ready>>()

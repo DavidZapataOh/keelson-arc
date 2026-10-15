@@ -72,6 +72,14 @@
   margin-left: auto;
 }
 
+.faucet {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--graphite);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .badge {
   padding: 8px 12px;
   border: 1px solid var(--graphite);

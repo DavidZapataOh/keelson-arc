@@ -18,6 +18,8 @@ export type DeploymentFile = {
   listsUrl: string;
   assetsUrl: string;
   tokens?: DeploymentToken[];
+  /** Where to get test funds; set on testnet deployments only. */
+  faucetUrl?: string;
   /** Set on testnet deployments whose issuer hands out credentials to anyone. */
   demo?: boolean;
 };
@@ -53,6 +55,7 @@ const KEYS = new Set<string>([
   "tokens",
   "demo",
   "rpcFallbackPath",
+  "faucetUrl",
   ...ADDRESS_KEYS,
   ...URL_KEYS,
 ]);
@@ -117,6 +120,7 @@ export function parseDeploymentFile(input: unknown): DeploymentFile {
   }
   for (const key of URL_KEYS) out[key] = checkUrl(key, record[key]);
   if (record.tokens !== undefined) out.tokens = checkTokens(record.tokens);
+  if (record.faucetUrl !== undefined) out.faucetUrl = checkUrl("faucetUrl", record.faucetUrl);
   if (record.rpcFallbackPath !== undefined) {
     if (
       typeof record.rpcFallbackPath !== "string" ||

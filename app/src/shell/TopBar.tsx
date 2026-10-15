@@ -15,6 +15,7 @@ const short = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)
 export function TopBar(props: {
   route: RouteId;
   session: Session | undefined;
+  faucetUrl?: string | undefined;
   onDisconnect: () => void;
 }) {
   return (
@@ -30,6 +31,16 @@ export function TopBar(props: {
         ))}
       </nav>
       <div className="topbar-end">
+        {props.faucetUrl && (
+          <a
+            className="faucet mono"
+            href={props.faucetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Get test funds
+          </a>
+        )}
         <span className="badge mono">{NETWORK_LABEL}</span>
         {props.session && <WalletMenu session={props.session} onDisconnect={props.onDisconnect} />}
       </div>

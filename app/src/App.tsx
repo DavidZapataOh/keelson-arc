@@ -76,6 +76,7 @@ export function App({
       <TopBar
         route={route.id === "trade" ? "trades" : route.id}
         session={session}
+        faucetUrl={boot.state === "ready" ? boot.chain.file.faucetUrl : undefined}
         onDisconnect={disconnect}
       />
       <main id="main">

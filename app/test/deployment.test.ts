@@ -87,6 +87,16 @@ describe("deployment verification", () => {
     ).toBe("wrong-link");
   });
 
+  it("accepts an https faucet link and rejects anything else", () => {
+    expect(
+      parseDeploymentFile({ ...FILE, faucetUrl: "https://faucet.example.org/" }).faucetUrl,
+    ).toBe("https://faucet.example.org");
+    expect(() => parseDeploymentFile({ ...FILE, faucetUrl: "http://faucet.example.org" })).toThrow(
+      "faucetUrl",
+    );
+    expect(() => parseDeploymentFile({ ...FILE, faucetUrl: 7 })).toThrow("faucetUrl");
+  });
+
   it("accepts only a path on the site as the RPC fallback", () => {
     expect(parseDeploymentFile({ ...FILE, rpcFallbackPath: "/rpc" }).rpcFallbackPath).toBe("/rpc");
     for (const bad of ["rpc", "//evil.test/rpc", "https://evil.test/rpc", "/a b", 7])
