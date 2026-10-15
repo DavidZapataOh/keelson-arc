@@ -4,7 +4,7 @@ import { type Address, isAddress } from "viem";
 import { useApp } from "../state/context.tsx";
 import { encodePackage, type TradePackage } from "./package.ts";
 import { parseTerms, TermsError, type Token } from "./terms.ts";
-import { KNOWN_TOKENS, readToken } from "./tokens.ts";
+import { knownTokens, readToken } from "./tokens.ts";
 
 const EXPIRIES = [
   { label: "1 hour", seconds: 3600 },
@@ -21,6 +21,7 @@ type Side = { token: string; custom: string; amount: string };
 function TokenField(props: {
   id: string;
   side: Side;
+  presets: Token[];
   onChange: (side: Side) => void;
   error?: string;
 }) {
@@ -33,7 +34,7 @@ function TokenField(props: {
           value={side.token}
           onChange={(e) => props.onChange({ ...side, token: e.target.value })}
         >
-          {KNOWN_TOKENS.map((t) => (
+          {props.presets.map((t) => (
             <option key={t.address} value={t.address}>
               {t.symbol}
             </option>
@@ -70,15 +71,16 @@ function TokenField(props: {
 
 export function NewTrade(props: { onOpen: (fragment: string) => void }) {
   const { chain, session } = useApp();
+  const presets = knownTokens(chain.file);
   const me = session?.snapshot.address as Address;
   const [iSell, setISell] = useState(true);
   const [give, setGive] = useState<Side>({
-    token: KNOWN_TOKENS[0]?.address ?? CUSTOM,
+    token: presets[0]?.address ?? CUSTOM,
     custom: "",
     amount: "",
   });
   const [get, setGet] = useState<Side>({
-    token: KNOWN_TOKENS[1]?.address ?? CUSTOM,
+    token: presets[1]?.address ?? CUSTOM,
     custom: "",
     amount: "",
   });
@@ -92,12 +94,12 @@ export function NewTrade(props: { onOpen: (fragment: string) => void }) {
 
   const resolve = async (side: Side): Promise<Token> => {
     if (side.token !== CUSTOM) {
-      const known = KNOWN_TOKENS.find((t) => t.address === side.token);
+      const known = presets.find((t) => t.address === side.token);
       if (known) return known;
     }
     if (!isAddress(side.custom, { strict: false }))
       throw new TermsError("token", "Enter a token address.");
-    const token = await readToken(chain.client, side.custom as Address);
+    const token = await readToken(chain.client, side.custom as Address, presets);
     if (!token) throw new TermsError("token", "That address is not a token on Arc.");
     return token;
   };
@@ -217,9 +219,9 @@ export function NewTrade(props: { onOpen: (fragment: string) => void }) {
         </label>
       </fieldset>
       <p className="label">You send</p>
-      <TokenField id="send" side={give} onChange={setGive} error={errors.give} />
+      <TokenField id="send" presets={presets} side={give} onChange={setGive} error={errors.give} />
       <p className="label">You receive</p>
-      <TokenField id="receive" side={get} onChange={setGet} error={errors.get} />
+      <TokenField id="receive" presets={presets} side={get} onChange={setGet} error={errors.get} />
       <label htmlFor="other">Counterparty address</label>
       <input
         id="other"

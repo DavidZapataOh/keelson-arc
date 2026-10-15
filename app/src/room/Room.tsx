@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { stringify } from "viem";
 import { useListsContext } from "../lists/context.tsx";
 import { useApp } from "../state/context.tsx";
 import type { TradePackage } from "../trade/package.ts";
 import { type Role, readTrade, roleOf, type TradeState, watchTrade } from "../trade/state.ts";
 import { formatAmount } from "../trade/terms.ts";
-import { useTokens } from "../trade/tokens.ts";
+import { knownTokens, useTokens } from "../trade/tokens.ts";
 import { useVault } from "../vault/context.tsx";
 import { ExportPanel } from "./ExportPanel.tsx";
 import { LegCard } from "./LegCard.tsx";
@@ -53,7 +53,8 @@ export function Room({ pkg }: { pkg: TradePackage }) {
   const { state, error, refresh } = useTrade(pkg);
   const lists = useListsContext();
   const [exported, setExported] = useState<{ prepared: Prepared; signature: string }>();
-  const tokens = useTokens(chain.client, [pkg.terms.sellToken, pkg.terms.payToken]);
+  const presets = useMemo(() => knownTokens(chain.file), [chain.file]);
+  const tokens = useTokens(chain.client, [pkg.terms.sellToken, pkg.terms.payToken], presets);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   useEffect(() => {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);

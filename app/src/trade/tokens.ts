@@ -3,19 +3,24 @@ import { useEffect, useState } from "react";
 import { type Address, erc20Abi, isAddressEqual, type PublicClient } from "viem";
 import type { Token } from "./terms.ts";
 
-export const KNOWN_TOKENS: Token[] = [
+const MAINNET_TOKENS: Token[] = [
   { address: usdc.address, symbol: "USDC", decimals: usdc.decimals },
   { address: eurc.address, symbol: "EURC", decimals: eurc.decimals },
 ];
 
-const known = (address: Address) => KNOWN_TOKENS.find((t) => isAddressEqual(t.address, address));
+/** The tokens a deployment offers by name; a deployment that lists none offers USDC and EURC on Arc mainnet. */
+export const knownTokens = (file: { tokens?: Token[] }): Token[] => file.tokens ?? MAINNET_TOKENS;
+
+const known = (tokens: Token[], address: Address) =>
+  tokens.find((t) => isAddressEqual(t.address, address));
 
 /** Symbol and decimals of any ERC-20, read from the chain; undefined when the address is not a token. */
 export async function readToken(
   client: PublicClient,
   address: Address,
+  tokens: Token[] = MAINNET_TOKENS,
 ): Promise<Token | undefined> {
-  const preset = known(address);
+  const preset = known(tokens, address);
   if (preset) return preset;
   try {
     const [symbol, decimals] = await Promise.all([
@@ -32,6 +37,7 @@ export async function readToken(
 export function useTokens(
   client: PublicClient,
   addresses: Address[],
+  presets: Token[],
 ): Map<string, Token & { verified: boolean }> {
   const [tokens, setTokens] = useState(new Map<string, Token & { verified: boolean }>());
   const key = addresses.join(",");
@@ -40,7 +46,7 @@ export function useTokens(
     let live = true;
     void Promise.all(
       addresses.map(async (address) => {
-        const token = await readToken(client, address);
+        const token = await readToken(client, address, presets);
         return [
           address.toLowerCase(),
           token
@@ -57,6 +63,6 @@ export function useTokens(
     return () => {
       live = false;
     };
-  }, [client, key]);
+  }, [client, key, presets]);
   return tokens;
 }

@@ -2,6 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 const external = process.env.E2E_BASE_URL;
 const real = Boolean(process.env.E2E_REAL);
+const testnet = Boolean(process.env.E2E_TESTNET);
 
 const app = {
   command:
@@ -17,25 +18,41 @@ const local = {
   timeout: 900_000,
 };
 
+const remote = {
+  command: "node scripts/serve-testnet.ts",
+  url: "http://127.0.0.1:4393",
+  reuseExistingServer: false,
+  timeout: 900_000,
+};
+
 export default defineConfig({
   reporter: "list",
   testDir: "e2e",
   use: { channel: "chrome" },
-  projects: real
+  projects: testnet
     ? [
         {
-          name: "real",
-          testMatch: /real\.spec\.ts/,
-          timeout: 600_000,
-          use: { baseURL: "http://127.0.0.1:4392" },
+          name: "testnet",
+          testMatch: /testnet\.spec\.ts/,
+          timeout: 900_000,
+          use: { baseURL: "http://127.0.0.1:4393" },
         },
       ]
-    : [
-        {
-          name: "app",
-          testIgnore: /real\./,
-          use: { baseURL: external ?? "http://127.0.0.1:4391" },
-        },
-      ],
-  webServer: external ? undefined : real ? local : app,
+    : real
+      ? [
+          {
+            name: "real",
+            testMatch: /real\.spec\.ts/,
+            timeout: 600_000,
+            use: { baseURL: "http://127.0.0.1:4392" },
+          },
+        ]
+      : [
+          {
+            name: "app",
+            testIgnore: /(real|testnet)\./,
+            use: { baseURL: external ?? "http://127.0.0.1:4391" },
+          },
+        ],
+  webServer: external ? undefined : testnet ? remote : real ? local : app,
 });

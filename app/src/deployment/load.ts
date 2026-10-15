@@ -98,7 +98,11 @@ export async function verifyDeployment(file: DeploymentFile, client: PublicClien
 export async function loadDeployment(
   url: string,
   makeClient: (rpcUrl: string) => PublicClient = (rpcUrl) =>
-    createPublicClient({ chain: arcChain, transport: http(rpcUrl) }),
+    createPublicClient({
+      chain: arcChain,
+      transport: http(rpcUrl),
+      batch: arcChain.contracts?.multicall3 ? { multicall: true } : undefined,
+    }),
 ): Promise<{ file: DeploymentFile; client: PublicClient }> {
   const file = await fetchDeploymentFile(url);
   const client = makeClient(file.rpcUrl);

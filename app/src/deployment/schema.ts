@@ -1,6 +1,8 @@
 import type { Address } from "viem";
 import { isAddress } from "viem";
 
+export type DeploymentToken = { address: Address; symbol: string; decimals: number };
+
 export type DeploymentFile = {
   chainId: number;
   verifier: Address;
@@ -13,6 +15,7 @@ export type DeploymentFile = {
   issuerUrl: string;
   listsUrl: string;
   assetsUrl: string;
+  tokens?: DeploymentToken[];
 };
 
 export type DeploymentFailure =
@@ -41,7 +44,7 @@ const ADDRESS_KEYS = [
   "settlement",
 ] as const;
 const URL_KEYS = ["rpcUrl", "issuerUrl", "listsUrl", "assetsUrl"] as const;
-const KEYS = new Set<string>(["chainId", ...ADDRESS_KEYS, ...URL_KEYS]);
+const KEYS = new Set<string>(["chainId", "tokens", ...ADDRESS_KEYS, ...URL_KEYS]);
 
 const isLocal = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
 
@@ -57,6 +60,29 @@ function checkUrl(key: string, value: unknown): string {
     throw new DeploymentError("invalid-file", `${key} must use https`);
   }
   return value.replace(/\/+$/, "");
+}
+
+function checkTokens(value: unknown): DeploymentToken[] {
+  if (!Array.isArray(value) || value.length > 16) {
+    throw new DeploymentError("invalid-file", "tokens must be a short list");
+  }
+  return value.map((item, i) => {
+    const t = item as Partial<DeploymentToken> | null;
+    if (
+      !t ||
+      typeof t.address !== "string" ||
+      !isAddress(t.address, { strict: false }) ||
+      typeof t.symbol !== "string" ||
+      t.symbol.length === 0 ||
+      t.symbol.length > 12 ||
+      !Number.isInteger(t.decimals) ||
+      (t.decimals as number) < 0 ||
+      (t.decimals as number) > 36
+    ) {
+      throw new DeploymentError("invalid-file", `tokens[${i}] is not a valid token`);
+    }
+    return { address: t.address, symbol: t.symbol, decimals: t.decimals as number };
+  });
 }
 
 export function parseDeploymentFile(input: unknown): DeploymentFile {
@@ -79,5 +105,6 @@ export function parseDeploymentFile(input: unknown): DeploymentFile {
     out[key] = value;
   }
   for (const key of URL_KEYS) out[key] = checkUrl(key, record[key]);
+  if (record.tokens !== undefined) out.tokens = checkTokens(record.tokens);
   return out as DeploymentFile;
 }
