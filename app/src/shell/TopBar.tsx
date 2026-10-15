@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { NETWORK_LABEL } from "../chain.ts";
+import type { Network } from "../chain.ts";
 import type { Session } from "../wallet/session.ts";
 
 export const ROUTES = [
@@ -16,6 +16,9 @@ export function TopBar(props: {
   route: RouteId;
   session: Session | undefined;
   faucetUrl?: string | undefined;
+  networks: Network[];
+  current: Network;
+  onSelectNetwork: (id: Network["id"]) => void;
   onDisconnect: () => void;
 }) {
   return (
@@ -41,10 +44,36 @@ export function TopBar(props: {
             Get test funds
           </a>
         )}
-        <span className="badge mono">{NETWORK_LABEL}</span>
+        <NetworkControl
+          networks={props.networks}
+          current={props.current}
+          onSelect={props.onSelectNetwork}
+        />
         {props.session && <WalletMenu session={props.session} onDisconnect={props.onDisconnect} />}
       </div>
     </header>
+  );
+}
+
+function NetworkControl(props: {
+  networks: Network[];
+  current: Network;
+  onSelect: (id: Network["id"]) => void;
+}) {
+  if (props.networks.length < 2) return <span className="badge mono">{props.current.label}</span>;
+  return (
+    <select
+      className="badge mono network"
+      aria-label="Network"
+      value={props.current.id}
+      onChange={(event) => props.onSelect(event.target.value as Network["id"])}
+    >
+      {props.networks.map((network) => (
+        <option key={network.id} value={network.id} disabled={!network.available}>
+          {network.available ? network.label : `${network.label} (not deployed yet)`}
+        </option>
+      ))}
+    </select>
   );
 }
 

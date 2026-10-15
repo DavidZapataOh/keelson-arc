@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { ARC as arc } from "./chain.ts";
+import { ARC as arc, NETWORKS, SELECTED, selectNetwork } from "./chain.ts";
 import { loadDeployment } from "./deployment/load.ts";
 import { ListsProvider } from "./lists/context.tsx";
 import type { ListsEngine } from "./lists/engine.ts";
@@ -18,9 +18,7 @@ const Credential = lazy(() =>
 );
 const Lists = lazy(() => import("./pages/Lists.tsx").then((m) => ({ default: m.Lists })));
 
-const DEPLOYMENT_URL = import.meta.env.VITE_DEPLOYMENT_URL ?? "/deployment.json";
-
-const defaultLoad = () => loadDeployment(DEPLOYMENT_URL);
+const defaultLoad = () => loadDeployment(SELECTED.deploymentUrl);
 
 type Boot =
   | { state: "loading" }
@@ -77,6 +75,9 @@ export function App({
         route={route.id === "trade" ? "trades" : route.id}
         session={session}
         faucetUrl={boot.state === "ready" ? boot.chain.file.faucetUrl : undefined}
+        networks={NETWORKS}
+        current={SELECTED}
+        onSelectNetwork={selectNetwork}
         onDisconnect={disconnect}
       />
       <main id="main">

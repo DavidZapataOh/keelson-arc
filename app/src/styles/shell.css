@@ -72,6 +72,12 @@
   margin-left: auto;
 }
 
+.network {
+  background: transparent;
+  color: var(--graphite);
+  cursor: pointer;
+}
+
 .faucet {
   font-size: 0.75rem;
   letter-spacing: 0.06em;
@@ -270,7 +276,7 @@ h1 {
     padding-inline: 8px;
   }
 
-  .badge {
+  .badge:not(.network) {
     display: none;
   }
 

@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { approveCall, attestCall, commitCall, settleCall } from "../actions/calls.ts";
 import { ProofContextError, readProofContext } from "../actions/context.ts";
 import { sendCall } from "../actions/send.ts";
+import { SELECTED } from "../chain.ts";
 import type { Call } from "../export/transaction.ts";
 import type { ListsEngine } from "../lists/engine.ts";
 import type { ListStatus } from "../lists/status.ts";
@@ -25,10 +26,7 @@ export type Run = {
 
 export type Prepared = { call: Call; label: string };
 
-const circuitHashes = () => ({
-  wasm: import.meta.env.VITE_CIRCUIT_WASM_SHA256,
-  zkey: import.meta.env.VITE_CIRCUIT_ZKEY_SHA256,
-});
+const circuitHashes = () => SELECTED.hashes;
 
 type Inputs = {
   chain: Chain;

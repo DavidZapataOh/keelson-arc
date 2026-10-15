@@ -32,7 +32,7 @@ let publicClient: ReturnType<typeof createPublicClient>;
 
 test.beforeAll(async ({ playwright }, info) => {
   const request = await playwright.request.newContext({ baseURL: info.project.use.baseURL });
-  const deployment = (await (await request.get("/deployment.json")).json()) as Deployment;
+  const deployment = (await (await request.get("/deployment.testnet.json")).json()) as Deployment;
   const eurc = deployment.tokens.find((token) => token.symbol === "EURC");
   if (!eurc) throw new Error("the deployment lists no EURC token");
   RPC = deployment.rpcUrl;
@@ -70,6 +70,7 @@ async function connectWallet(page: Page, who: "alice" | "bob") {
     throw new Error(`the test wallet does not handle ${method}`);
   });
   await page.addInitScript(() => {
+    window.localStorage.setItem("keelson.network", "testnet");
     const provider = {
       request: ({ method, params }: { method: string; params?: unknown[] }) =>
         (

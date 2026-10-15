@@ -1,3 +1,5 @@
+import { SELECTED } from "../chain.ts";
+
 export type VaultRecord = {
   v: 1;
   salt: string;
@@ -11,7 +13,7 @@ export type VaultStore = {
   write(record: VaultRecord): Promise<void>;
 };
 
-const DB = "keelson";
+const DB = SELECTED.id === "mainnet" ? "keelson-mainnet" : "keelson";
 const TABLE = "vault";
 const KEY = "main";
 
