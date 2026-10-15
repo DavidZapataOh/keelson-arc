@@ -2,9 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 const external = process.env.E2E_BASE_URL;
 const real = Boolean(process.env.E2E_REAL);
-const publicUrl =
-  process.env.E2E_PUBLIC_URL ??
-  (process.env.E2E_PUBLIC ? "https://keelson-app.vercel.app" : undefined);
+const publicUrl = process.env.E2E_PUBLIC_URL;
 
 const app = {
   command:

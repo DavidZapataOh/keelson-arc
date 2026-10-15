@@ -6,7 +6,7 @@ export type StepStatus = "done" | "current" | "waiting" | "blocked";
 export type Step = { id: StepId; status: StepStatus; reason?: string };
 
 export const STEP_LABELS: Record<StepId, string> = {
-  credential: "Credential loaded",
+  credential: "Credential",
   proof: "Proof",
   approve: "Approve token",
   commit: "Commit",

@@ -12,18 +12,34 @@ import { privateKeyToAccount } from "viem/accounts";
 import { arcTestnet } from "viem/chains";
 
 /**
- * Drives the published site on Arc testnet, end to end, with two wallets that sign in this process.
- * Everything else is the live deployment: its contracts, issuer, lists and circuit files.
+ * Drives a published deployment on Arc testnet, end to end, with two funded wallets that sign in
+ * this process. Everything else is the live deployment: its contracts, issuer, lists and circuit
+ * files. Set E2E_PUBLIC_URL to the site and E2E_WALLETS to a JSON file of the form
+ * { "alice": { "key": "0x…", "address": "0x…" }, "bob": { … } }.
  */
-const DIR = "/Users/david/Projects/arc-micro/.testnet";
-const RPC = "https://rpc.testnet.arc.io";
-const EURC: Address = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
+const walletsFile = process.env.E2E_WALLETS;
+if (!walletsFile) throw new Error("E2E_WALLETS must point to the funded test wallets");
 
-const wallets = JSON.parse(readFileSync(`${DIR}/wallets.json`, "utf8")) as Record<
+const wallets = JSON.parse(readFileSync(walletsFile, "utf8")) as Record<
   "alice" | "bob",
   { key: `0x${string}`; address: Address }
 >;
-const publicClient = createPublicClient({ chain: arcTestnet, transport: http(RPC) });
+
+type Deployment = { rpcUrl: string; tokens: { address: Address; symbol: string }[] };
+let RPC = "";
+let EURC: Address;
+let publicClient: ReturnType<typeof createPublicClient>;
+
+test.beforeAll(async ({ playwright }, info) => {
+  const request = await playwright.request.newContext({ baseURL: info.project.use.baseURL });
+  const deployment = (await (await request.get("/deployment.json")).json()) as Deployment;
+  const eurc = deployment.tokens.find((token) => token.symbol === "EURC");
+  if (!eurc) throw new Error("the deployment lists no EURC token");
+  RPC = deployment.rpcUrl;
+  EURC = eurc.address;
+  publicClient = createPublicClient({ chain: arcTestnet, transport: http(RPC) });
+  await request.dispose();
+});
 
 async function connectWallet(page: Page, who: "alice" | "bob") {
   const { key, address } = wallets[who];
@@ -118,8 +134,20 @@ test("two parties settle a private trade on the published testnet site", async (
   };
   const alice = await (await browser.newContext()).newPage();
   const bob = await (await browser.newContext()).newPage();
-  for (const page of [alice, bob])
-    page.on("pageerror", (e) => console.log("pageerror:", e.message));
+  const problems: string[] = [];
+  for (const [name, page] of [
+    ["alice", alice],
+    ["bob", bob],
+  ] as const) {
+    page.on("pageerror", (e) => problems.push(`${name} pageerror: ${e.message}`));
+    page.on("console", (m) => {
+      if (m.type() === "error") problems.push(`${name} console: ${m.text()}`);
+    });
+    page.on("requestfailed", (r) => problems.push(`${name} ${r.url()}: ${r.failure()?.errorText}`));
+    page.on("response", (r) => {
+      if (r.status() >= 400) problems.push(`${name} ${r.status()} ${r.url()}`);
+    });
+  }
   await onboard(alice, "alice");
   await onboard(bob, "bob");
 
@@ -147,6 +175,12 @@ test("two parties settle a private trade on the published testnet site", async (
   await expect(alice.getByText(/settled\. both legs moved/i)).toBeVisible({ timeout: 120_000 });
   await expect(bob.getByText(/settled\. both legs moved/i)).toBeVisible({ timeout: 60_000 });
 
+  await alice.evaluate(() => {
+    window.location.hash = "#/lists";
+  });
+  await expect(alice.getByText("Accepted by the contract")).toHaveCount(3, { timeout: 60_000 });
+
+  expect(problems).toEqual([]);
   expect((await balance(EURC, wallets.alice.address)) - before.aliceEurc).toBe(
     parseUnits("1.8", 6),
   );
