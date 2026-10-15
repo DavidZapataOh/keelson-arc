@@ -5,8 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { getAddress } from "viem";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "../src/App.tsx";
-import type { ListsEngine } from "../src/lists/engine.ts";
 import { decodePackage, encodePackage, type TradePackage } from "../src/trade/package.ts";
+import { fakeEngine } from "./support/engine.ts";
 import { FILE } from "./support/fakeChain.ts";
 import {
   allowanceKey,
@@ -44,15 +44,7 @@ const hash = hashTerms({
   salt: pkg.salt,
 });
 
-const engine = (): ListsEngine => ({
-  load: async () => ({
-    roots: { issuers: 1n, sanctions: 2n, revocations: 3n },
-    sanctionsIssued: undefined,
-    revocationsUpdatedAt: undefined,
-    fetchedAt: 0,
-  }),
-  revoked: async (ids) => ids.map(() => false),
-});
+const engine = fakeEngine();
 
 const funded = () => {
   const world = newWorld();

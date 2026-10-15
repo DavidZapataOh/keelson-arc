@@ -5,8 +5,8 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App.tsx";
-import type { ListsEngine, ListsSummary } from "../src/lists/engine.ts";
 import type { Chain } from "../src/state/context.tsx";
+import { fakeEngine } from "./support/engine.ts";
 import { FILE, fakeChain } from "./support/fakeChain.ts";
 
 beforeAll(() => {
@@ -15,26 +15,11 @@ beforeAll(() => {
   }
 });
 
-const SUMMARY: ListsSummary = {
-  roots: { issuers: 11n, sanctions: 22n, revocations: 33n },
-  sanctionsIssued: "2026-10-13",
-  revocationsUpdatedAt: 1_800_000_000,
-  fetchedAt: 0,
-};
-
 const chain =
   (versions = { issuers: 1n, sanctions: 7n, revocations: 0n }): (() => Promise<Chain>) =>
   async () => ({ file: FILE, client: fakeChain({ versions }) });
 
-const engine =
-  (options: { revoked?: boolean; fail?: string } = {}): (() => ListsEngine) =>
-  () => ({
-    load: async () => {
-      if (options.fail) throw new Error(options.fail);
-      return SUMMARY;
-    },
-    revoked: async (ids) => ids.map(() => options.revoked ?? false),
-  });
+const engine = (options: { revoked?: boolean; fail?: string } = {}) => fakeEngine(options);
 
 async function openAt(route: string, load = chain(), makeEngine = engine()) {
   window.location.hash = `#/${route}`;

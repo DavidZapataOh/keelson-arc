@@ -1,5 +1,5 @@
-import { arc } from "@keelson/sdk/arc";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { ARC as arc } from "./chain.ts";
 import { loadDeployment } from "./deployment/load.ts";
 import { ListsProvider } from "./lists/context.tsx";
 import type { ListsEngine } from "./lists/engine.ts";

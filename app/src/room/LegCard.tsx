@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import type { Role } from "../trade/state.ts";
 import { STEP_LABELS, type Step } from "./steps.ts";
 
@@ -10,6 +10,7 @@ export function LegCard(props: {
   address: string;
   you: boolean;
   steps: Step[];
+  actionFor?: (step: Step) => ReactNode;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -53,6 +54,9 @@ export function LegCard(props: {
               {step.status === "waiting" && "Waiting"}
               {step.status === "blocked" && (step.reason ?? "Blocked")}
             </span>
+            {step.status === "current" && props.actionFor && (
+              <div className="step-extra">{props.actionFor(step)}</div>
+            )}
           </li>
         ))}
       </ol>

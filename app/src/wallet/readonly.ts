@@ -1,5 +1,5 @@
-import { arc } from "@keelson/sdk/arc";
 import { type Address, getAddress } from "viem";
+import { ARC as arc } from "../chain.ts";
 import type { Session, Snapshot } from "./session.ts";
 
 /** A session that can read and export but never sign: for custody teams without a browser wallet. */

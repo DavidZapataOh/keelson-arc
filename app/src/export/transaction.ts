@@ -1,5 +1,4 @@
 import { complianceRegistryAbi, settlementAbi } from "@keelson/sdk/abi";
-import { arc } from "@keelson/sdk/arc";
 import { MIN_FEE_PER_GAS } from "@keelson/sdk/fees";
 import {
   type Abi,
@@ -10,6 +9,7 @@ import {
   isAddressEqual,
   stringify,
 } from "viem";
+import { ARC as arc } from "../chain.ts";
 
 export type Call = { to: Address; data: Hex; value?: bigint };
 

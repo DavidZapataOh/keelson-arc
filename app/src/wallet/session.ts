@@ -1,5 +1,5 @@
-import { arc } from "@keelson/sdk/arc";
 import { type Address, createWalletClient, custom, getAddress, type WalletClient } from "viem";
+import { ARC as arc } from "../chain.ts";
 import type { Wallet } from "./types.ts";
 
 export type Snapshot = { address: Address; chainId: number };

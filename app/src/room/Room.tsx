@@ -1,12 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { stringify } from "viem";
+import { useListsContext } from "../lists/context.tsx";
 import { useApp } from "../state/context.tsx";
 import type { TradePackage } from "../trade/package.ts";
-import { type Role, roleOf, type TradeState, watchTrade } from "../trade/state.ts";
+import { type Role, readTrade, roleOf, type TradeState, watchTrade } from "../trade/state.ts";
 import { formatAmount } from "../trade/terms.ts";
 import { useTokens } from "../trade/tokens.ts";
 import { useVault } from "../vault/context.tsx";
+import { ExportPanel } from "./ExportPanel.tsx";
 import { LegCard } from "./LegCard.tsx";
+import { SettleBar } from "./SettleBar.tsx";
+import { StepActions } from "./StepActions.tsx";
 import { readiness, stepsOf } from "./steps.ts";
+import { type Prepared, useController } from "./useController.ts";
 
 const short = (value: string) => `${value.slice(0, 8)}…${value.slice(-4)}`;
 
@@ -35,13 +41,18 @@ function useTrade(pkg: TradePackage) {
       () => setError("The chain could not be read. Showing the last state."),
     );
   }, [chain, pkg]);
-  return { state, error };
+  const refresh = useCallback(async () => {
+    setState(await readTrade(chain, pkg));
+  }, [chain, pkg]);
+  return { state, error, refresh };
 }
 
 export function Room({ pkg }: { pkg: TradePackage }) {
   const { chain, session } = useApp();
   const { vault } = useVault();
-  const { state, error } = useTrade(pkg);
+  const { state, error, refresh } = useTrade(pkg);
+  const lists = useListsContext();
+  const [exported, setExported] = useState<{ prepared: Prepared; signature: string }>();
   const tokens = useTokens(chain.client, [pkg.terms.sellToken, pkg.terms.payToken]);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   useEffect(() => {
@@ -59,6 +70,18 @@ export function Room({ pkg }: { pkg: TradePackage }) {
 
   const amountText = (value: bigint, token: typeof sell) =>
     token ? `${formatAmount(value, token.decimals)} ${token.symbol}` : "…";
+  const controller = useController({
+    chain,
+    // biome-ignore lint/style/noNonNullAssertion: the room is only rendered with a session
+    session: session!,
+    vault,
+    engine: lists.engine,
+    status: lists.state.phase === "ready" ? lists.state.status : [],
+    pkg,
+    mine,
+    refresh,
+  });
+  const signature = state ? stringify(state.legs) + String(state.settled) : "";
   const remaining = state ? Number(terms.expiry) - Math.max(now, state.readAt) : undefined;
   const ready = state ? readiness(terms, state) : undefined;
 
@@ -124,6 +147,23 @@ export function Room({ pkg }: { pkg: TradePackage }) {
               role={role}
               address={terms[role]}
               you={mine === role}
+              actionFor={
+                mine === role && session
+                  ? (step) => (
+                      <StepActions
+                        step={step.id}
+                        controller={controller}
+                        readOnly={session.kind === "readonly"}
+                        amountLabel={amountText(
+                          role === "seller" ? terms.sellAmount : terms.payAmount,
+                          role === "seller" ? sell : pay,
+                        )}
+                        hasCredential={hasCredential}
+                        onExport={(prepared) => setExported({ prepared, signature })}
+                      />
+                    )
+                  : undefined
+              }
               steps={stepsOf(state.legs[role], {
                 amount: role === "seller" ? terms.sellAmount : terms.payAmount,
                 own: mine === role,
@@ -145,10 +185,28 @@ export function Room({ pkg }: { pkg: TradePackage }) {
         </p>
       )}
 
-      {ready && (
-        <p className={`settle-status ${ready.ready ? "ready" : ""}`} role="status">
-          {ready.ready ? "Both legs are ready to settle." : ready.reason}
-        </p>
+      {ready && session && (
+        <SettleBar
+          ready={ready}
+          run={controller.runs.settle}
+          readOnly={session.kind === "readonly"}
+          onSettle={() => void controller.settle()}
+          onExport={() => {
+            const prepared = controller.prepare("settle");
+            if (prepared) setExported({ prepared, signature });
+          }}
+        />
+      )}
+
+      {exported && (
+        <ExportPanel
+          call={exported.prepared.call}
+          label={exported.prepared.label}
+          file={chain.file}
+          tokens={[...tokens.values()]}
+          stale={exported.signature !== signature}
+          onClose={() => setExported(undefined)}
+        />
       )}
     </section>
   );

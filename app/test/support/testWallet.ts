@@ -6,12 +6,19 @@ import type { Wallet } from "../../src/wallet/types.ts";
 type Listener = (value: unknown) => void;
 
 /** An EIP-1193 provider for tests: one real local account, a switchable chain and emitted events. */
-export function testWallet(options: { key: `0x${string}`; chainId?: number; knowsArc?: boolean }) {
+export function testWallet(options: {
+  key: `0x${string}`;
+  chainId?: number;
+  knowsArc?: boolean;
+  rejectSend?: boolean;
+  onSend?: (tx: { from: string; to: `0x${string}`; data: `0x${string}` }) => void;
+}) {
   const account = privateKeyToAccount(options.key);
   const listeners = new Map<string, Set<Listener>>();
   let chainId = options.chainId ?? arc.id;
   let known = options.knowsArc ?? true;
   const requests: { method: string; params?: unknown }[] = [];
+  const sent: unknown[] = [];
 
   const emit = (event: string, value: unknown) => {
     for (const listener of listeners.get(event) ?? []) listener(value);
@@ -33,6 +40,18 @@ export function testWallet(options: { key: `0x${string}`; chainId?: number; know
           chainId = target;
           emit("chainChanged", `0x${chainId.toString(16)}`);
           return null;
+        }
+        case "eth_sendTransaction": {
+          if (options.rejectSend)
+            throw Object.assign(new Error("User rejected the request."), { code: 4001 });
+          const tx = (params as unknown[])[0] as {
+            from: string;
+            to: `0x${string}`;
+            data: `0x${string}`;
+          };
+          sent.push(tx);
+          options.onSend?.(tx);
+          return `0x${sent.length.toString(16).padStart(64, "0")}`;
         }
         case "wallet_addEthereumChain":
           known = true;
@@ -65,6 +84,7 @@ export function testWallet(options: { key: `0x${string}`; chainId?: number; know
     wallet,
     account,
     requests,
+    sent,
     listenerCount: (event: string) => listeners.get(event)?.size ?? 0,
     changeAccount: (address: string) => emit("accountsChanged", [address]),
     changeChain: (id: number) => {

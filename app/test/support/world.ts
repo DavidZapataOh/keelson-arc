@@ -70,14 +70,49 @@ export function answerWorld(world: World, method: string, args: unknown[]): unkn
   {
     if (method === "eth_chainId") return `0x${arc.id.toString(16)}`;
     if (method === "eth_getBlockByNumber") return block(world);
+    if (method === "eth_blockNumber") return "0x10";
+    if (method === "eth_maxPriorityFeePerGas") return "0x1";
+    if (method === "eth_getTransactionReceipt") {
+      return {
+        status: "0x1",
+        transactionHash: `0x${"1".padStart(64, "0")}`,
+        transactionIndex: "0x0",
+        blockHash: zeroHash,
+        blockNumber: "0x10",
+        from: "0x0000000000000000000000000000000000000001",
+        to: "0x0000000000000000000000000000000000000002",
+        cumulativeGasUsed: "0x1",
+        gasUsed: "0x1",
+        contractAddress: null,
+        logs: [],
+        logsBloom: `0x${"0".repeat(512)}`,
+        type: "0x2",
+        effectiveGasPrice: "0x1",
+      };
+    }
     if (method !== "eth_call") throw new Error(`unexpected ${method}`);
     const { to, data } = args[0] as { to: Address; data: Hex };
     const target = to.toLowerCase();
     if (target === ADDRESSES.compliance.toLowerCase()) {
       const call = decodeFunctionData({ abi: complianceRegistryAbi, data });
+      if (call.functionName === "policy") {
+        return encodeAbiParameters(
+          [{ type: "uint8" }, { type: "uint64" }, { type: "uint64" }],
+          [2, 3600n, 7200n],
+        );
+      }
+      if (call.functionName === "regulatorKeyX" || call.functionName === "regulatorKeyY") {
+        return word("uint256", 5n);
+      }
       if (call.functionName === "isCompliant") {
         const [, party] = call.args as [bigint, Address];
         return word("bool", world.compliant.has(key(party)));
+      }
+      return "0x";
+    }
+    for (const name of ["issuers", "sanctions", "revocations"] as const) {
+      if (target === ADDRESSES[name].toLowerCase()) {
+        return encodeAbiParameters([{ type: "uint64" }], [1n]);
       }
     }
     if (target === ADDRESSES.settlement.toLowerCase()) {
@@ -87,6 +122,7 @@ export function answerWorld(world: World, method: string, args: unknown[]): unkn
         return word("bytes32", world.commitments.get(key(party)) ?? zeroHash);
       }
       if (call.functionName === "settled") return word("bool", world.settled);
+      return "0x";
     }
     const token = decodeFunctionData({ abi: erc20Abi, data });
     if (token.functionName === "allowance") {
@@ -97,7 +133,7 @@ export function answerWorld(world: World, method: string, args: unknown[]): unkn
       const [owner] = token.args as [Address];
       return word("uint256", world.balance.get(balanceKey(to, owner)) ?? 0n);
     }
-    throw new Error(`unexpected call to ${to}`);
+    return "0x";
   }
 }
 

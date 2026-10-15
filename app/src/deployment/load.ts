@@ -1,6 +1,6 @@
 import { complianceRegistryAbi, settlementAbi } from "@keelson/sdk/abi";
-import { arc as arcChain } from "@keelson/sdk/arc";
 import { type Address, createPublicClient, http, isAddressEqual, type PublicClient } from "viem";
+import { ARC as arcChain } from "../chain.ts";
 import { DeploymentError, type DeploymentFile, parseDeploymentFile } from "./schema.ts";
 
 export { DeploymentError, type DeploymentFile };

@@ -5,21 +5,13 @@ import axe from "axe-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App.tsx";
 import { DeploymentError } from "../src/deployment/schema.ts";
-import type { ListsEngine } from "../src/lists/engine.ts";
+import { fakeEngine } from "./support/engine.ts";
 import { FILE, fakeChain } from "./support/fakeChain.ts";
 import { testWallet } from "./support/testWallet.ts";
 
 const KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
 const ready = async () => ({ file: FILE, client: fakeChain() });
-const engine = (): ListsEngine => ({
-  load: async () => ({
-    roots: { issuers: 1n, sanctions: 2n, revocations: 3n },
-    sanctionsIssued: undefined,
-    revocationsUpdatedAt: undefined,
-    fetchedAt: 0,
-  }),
-  revoked: async (ids) => ids.map(() => false),
-});
+const engine = fakeEngine();
 
 const announce = (wallet: ReturnType<typeof testWallet>["wallet"]) =>
   act(() => {

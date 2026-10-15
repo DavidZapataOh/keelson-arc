@@ -1,17 +1,41 @@
 import { defineConfig } from "@playwright/test";
 
 const external = process.env.E2E_BASE_URL;
+const real = Boolean(process.env.E2E_REAL);
+
+const app = {
+  command:
+    "./node_modules/.bin/vite build --outDir dist && exec ./node_modules/.bin/vite preview --outDir dist --host 127.0.0.1 --port 4391",
+  url: "http://127.0.0.1:4391",
+  reuseExistingServer: false,
+};
+
+const local = {
+  command: "node scripts/serve-real.ts",
+  url: "http://127.0.0.1:4392",
+  reuseExistingServer: false,
+  timeout: 900_000,
+};
 
 export default defineConfig({
   reporter: "list",
   testDir: "e2e",
-  use: { baseURL: external ?? "http://127.0.0.1:4391", channel: "chrome" },
-  webServer: external
-    ? undefined
-    : {
-        command:
-          "./node_modules/.bin/vite build && exec ./node_modules/.bin/vite preview --host 127.0.0.1 --port 4391",
-        url: "http://127.0.0.1:4391",
-        reuseExistingServer: false,
-      },
+  use: { channel: "chrome" },
+  projects: real
+    ? [
+        {
+          name: "real",
+          testMatch: /real\.spec\.ts/,
+          timeout: 600_000,
+          use: { baseURL: "http://127.0.0.1:4392" },
+        },
+      ]
+    : [
+        {
+          name: "app",
+          testIgnore: /real\./,
+          use: { baseURL: external ?? "http://127.0.0.1:4391" },
+        },
+      ],
+  webServer: external ? undefined : real ? local : app,
 });

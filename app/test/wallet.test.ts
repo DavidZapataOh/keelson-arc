@@ -6,7 +6,7 @@ import { assertArc, connect, WrongChainError } from "../src/wallet/session.ts";
 import { testWallet } from "./support/testWallet.ts";
 
 const KEY_A = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
-const KEY_B = "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdd5e8a8";
+const KEY_B = "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a";
 
 describe("discovery", () => {
   it("lists wallets as they announce themselves", () => {

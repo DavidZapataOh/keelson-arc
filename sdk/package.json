@@ -31,6 +31,8 @@
     "./snapshot": "./src/snapshot.ts",
     "./parameters": "./src/parameters.ts",
     "./credential": "./src/credential.ts",
-    "./codec": "./src/codec.ts"
+    "./codec": "./src/codec.ts",
+    "./prover": "./src/prover.ts",
+    "./proof": "./src/proof.ts"
   }
 }
