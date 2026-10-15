@@ -21,10 +21,10 @@ contract ComplianceVerifier {
     uint256 private constant GAMMA_X0 = 0x1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed;
     uint256 private constant GAMMA_Y1 = 0x090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b;
     uint256 private constant GAMMA_Y0 = 0x12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa;
-    uint256 private constant DELTA_X1 = 0x004cdbc6b50c21662dd4a7b64ae43386aa3aa7ed038a267c5b226984bfb91534;
-    uint256 private constant DELTA_X0 = 0x01e1beb5ea77e309df6002bb5c8988606b71fceda07d96f2692faed2c3645284;
-    uint256 private constant DELTA_Y1 = 0x18d58464170bd373a1ef45bfe593ee641845124698c1667f68f7aef15040c44c;
-    uint256 private constant DELTA_Y0 = 0x00fda328094d3777957854d4f7775b34b090c701c98a72430a8a7948db0b4456;
+    uint256 private constant DELTA_X1 = 0x0cd7a1659562ae9067ef5ec72eefbd7c4ff1fd8a43f35bebc09e7d10eb63587e;
+    uint256 private constant DELTA_X0 = 0x2384aebbb6f8451fa453f132582b230c05a68e2ddaf47a1e5df4e5c5399a4987;
+    uint256 private constant DELTA_Y1 = 0x14b76c9a236b6be626640dcf6a8cc7645b80b7f13fd216f78af69b342a593cd2;
+    uint256 private constant DELTA_Y0 = 0x0a73ab75c6139cfc703dbfb10dac6a55a1c754b36e4885fb8d4aad62e4ae427b;
     uint256 private constant IC0_X = 0x22f811b344be730b52114f60bf01fb010482fa7f309e8c28b7a10b7282ca9741;
     uint256 private constant IC0_Y = 0x06cc9c89d32a3da4903d55b7834ae781c3c20c95cd1e5d62d2076feba065edfd;
     uint256 private constant IC1_X = 0x2fdf0a0c8b440e0c96607283c0667b0aa615d4eeb2f6e7280a64015c965bf7bf;

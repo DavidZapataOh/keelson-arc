@@ -1,13 +1,9 @@
 import { readFileSync } from "node:fs";
 import type { Page } from "@playwright/test";
+import { productionKeys } from "../../circuits/scripts/keys.ts";
 import { cors } from "./support.ts";
 
-const circuit = new URL("../../circuits/build/compliance/", import.meta.url).pathname;
-
-export const circuitFiles = {
-  wasm: `${circuit}compliance_js/compliance.wasm`,
-  zkey: `${circuit}compliance.zkey`,
-};
+const circuitFiles = await productionKeys();
 
 export type Wiring = {
   rpcUrl: string;

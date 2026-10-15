@@ -1,0 +1,20 @@
+{
+  "circuit": "compliance",
+  "constraints": 25378,
+  "powersOfTauPower": 16,
+  "r1csSha256": "d9b4df33b9c5d0be667dbc772b4dbeed0a970d72430cd5b20f7402a1cfc58e80",
+  "contributions": [
+    {
+      "name": "Keelson",
+      "contributionHash": "87,222,2,90,211,101,58,29,110,177,239,101,4,210,61,165,69,219,230,220,66,140,150,170,198,119,12,221,78,184,252,16,242,8,103,186,79,27,189,15,16,227,162,215,42,232,142,173,92,136,214,198,8,25,91,247,67,4,49,138,189,31,217,246",
+      "zkeySha256": "0a01f219c39f9cf11d4cbd8fbce4557e67c0d6703b4a0035ded135a78768931d"
+    }
+  ],
+  "beacon": {
+    "hash": "932179118f097b14fac524d2cde13e121774107c1d1e2c2456870b4e8869cc36",
+    "iterationsExp": 10
+  },
+  "wasmSha256": "0e0838432a011a1e8261134b895ec8b28162bb367d35ea5585f2c5bd51928565",
+  "zkeySha256": "a489eb105df81e216a0aad51b31bab27035d20e049c5e002322394ab91131590",
+  "verificationKeySha256": "9c1a3bddab0e01150704285488de1d4172408e62974f71e2e33be2fe000d632c"
+}
