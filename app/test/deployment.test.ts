@@ -1,3 +1,5 @@
+import { createPublicClient, custom } from "viem";
+import { arc } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import {
   DeploymentError,
@@ -83,6 +85,50 @@ describe("deployment verification", () => {
     expect(
       await failure(() => verifyDeployment(FILE, fakeChain({ links: { compliance: foreign } }))),
     ).toBe("wrong-link");
+  });
+
+  it("accepts only a path on the site as the RPC fallback", () => {
+    expect(parseDeploymentFile({ ...FILE, rpcFallbackPath: "/rpc" }).rpcFallbackPath).toBe("/rpc");
+    for (const bad of ["rpc", "//evil.test/rpc", "https://evil.test/rpc", "/a b", 7])
+      expect(() => parseDeploymentFile({ ...FILE, rpcFallbackPath: bad })).toThrow(
+        "rpcFallbackPath",
+      );
+  });
+
+  it("falls back to the same-origin path only when the RPC endpoint is unreachable", async () => {
+    const original = globalThis.fetch;
+    const reached: string[] = [];
+    const makeClient = (blocked: boolean) => (url: string) => {
+      reached.push(url);
+      return url === FILE.rpcUrl && blocked
+        ? createPublicClient({
+            chain: arc,
+            transport: custom({
+              request: async () => {
+                throw new TypeError("Failed to fetch");
+              },
+            }),
+          })
+        : fakeChain();
+    };
+    globalThis.fetch = serve({ ...FILE, rpcFallbackPath: "/rpc" });
+    try {
+      await loadDeployment("https://x.test/d.json", makeClient(true));
+      expect(reached).toEqual([FILE.rpcUrl, `${location.origin}/rpc`]);
+      reached.length = 0;
+      await loadDeployment("https://x.test/d.json", makeClient(false));
+      expect(reached).toEqual([FILE.rpcUrl]);
+    } finally {
+      globalThis.fetch = original;
+    }
+    globalThis.fetch = serve(FILE);
+    try {
+      expect(await failure(() => loadDeployment("https://x.test/d.json", makeClient(true)))).toBe(
+        "unreachable",
+      );
+    } finally {
+      globalThis.fetch = original;
+    }
   });
 
   it("loads end to end from a url", async () => {

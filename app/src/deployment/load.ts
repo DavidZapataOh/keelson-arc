@@ -106,6 +106,15 @@ export async function loadDeployment(
 ): Promise<{ file: DeploymentFile; client: PublicClient }> {
   const file = await fetchDeploymentFile(url);
   const client = makeClient(file.rpcUrl);
-  await verifyDeployment(file, client);
-  return { file, client };
+  try {
+    await verifyDeployment(file, client);
+    return { file, client };
+  } catch (error) {
+    const blocked =
+      error instanceof DeploymentError && error.code === "unreachable" && file.rpcFallbackPath;
+    if (!blocked) throw error;
+  }
+  const fallback = makeClient(new URL(file.rpcFallbackPath as string, location.origin).href);
+  await verifyDeployment(file, fallback);
+  return { file, client: fallback };
 }

@@ -12,6 +12,8 @@ export type DeploymentFile = {
   compliance: Address;
   settlement: Address;
   rpcUrl: string;
+  /** A path on the app's own origin that forwards to the RPC, for browsers that block rpcUrl. */
+  rpcFallbackPath?: string;
   issuerUrl: string;
   listsUrl: string;
   assetsUrl: string;
@@ -46,7 +48,14 @@ const ADDRESS_KEYS = [
   "settlement",
 ] as const;
 const URL_KEYS = ["rpcUrl", "issuerUrl", "listsUrl", "assetsUrl"] as const;
-const KEYS = new Set<string>(["chainId", "tokens", "demo", ...ADDRESS_KEYS, ...URL_KEYS]);
+const KEYS = new Set<string>([
+  "chainId",
+  "tokens",
+  "demo",
+  "rpcFallbackPath",
+  ...ADDRESS_KEYS,
+  ...URL_KEYS,
+]);
 
 const isLocal = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
 
@@ -108,6 +117,15 @@ export function parseDeploymentFile(input: unknown): DeploymentFile {
   }
   for (const key of URL_KEYS) out[key] = checkUrl(key, record[key]);
   if (record.tokens !== undefined) out.tokens = checkTokens(record.tokens);
+  if (record.rpcFallbackPath !== undefined) {
+    if (
+      typeof record.rpcFallbackPath !== "string" ||
+      !/^\/(?!\/)[\w.~/-]*$/.test(record.rpcFallbackPath)
+    ) {
+      throw new DeploymentError("invalid-file", "rpcFallbackPath must be a path on this site");
+    }
+    out.rpcFallbackPath = record.rpcFallbackPath;
+  }
   if (record.demo !== undefined) {
     if (typeof record.demo !== "boolean") {
       throw new DeploymentError("invalid-file", "demo must be true or false");

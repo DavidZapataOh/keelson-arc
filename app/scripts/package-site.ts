@@ -15,7 +15,11 @@ if (!values.deployment) throw new Error("usage: package-site.ts --deployment <fi
 
 const sha = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
 const out = resolve(values.out as string);
-const deployment = JSON.parse(readFileSync(values.deployment, "utf8")) as { chainId: number };
+const deployment = JSON.parse(readFileSync(values.deployment, "utf8")) as {
+  chainId: number;
+  rpcUrl: string;
+};
+const remoteRpc = new URL(deployment.rpcUrl).protocol === "https:";
 
 // The production circuit with its development keys; the app pins exactly these files by hash.
 const circuit = await buildCircuit(
@@ -36,7 +40,8 @@ execFileSync("./node_modules/.bin/vite", ["build", "--outDir", out, "--emptyOutD
 mkdirSync(join(out, "circuit"), { recursive: true });
 copyFileSync(circuit.wasm, join(out, "circuit/compliance.wasm"));
 copyFileSync(circuit.zkey, join(out, "circuit/compliance.zkey"));
-writeFileSync(join(out, "deployment.json"), `${JSON.stringify(deployment, null, 2)}\n`);
+const published = remoteRpc ? { ...deployment, rpcFallbackPath: "/rpc" } : deployment;
+writeFileSync(join(out, "deployment.json"), `${JSON.stringify(published, null, 2)}\n`);
 
 const headers = (source: string, items: Record<string, string>) => ({
   source,
@@ -46,6 +51,7 @@ writeFileSync(
   join(out, "vercel.json"),
   `${JSON.stringify(
     {
+      rewrites: remoteRpc ? [{ source: "/rpc", destination: deployment.rpcUrl }] : [],
       headers: [
         headers("/(.*)", { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" }),
         headers("/assets/(.*)", { "Cache-Control": "public, max-age=31536000, immutable" }),
@@ -59,3 +65,4 @@ writeFileSync(
 );
 rmSync(join(out, ".vite"), { recursive: true, force: true });
 console.log(`site packaged in ${out}`);
+process.exit(0);
