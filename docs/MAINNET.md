@@ -86,7 +86,7 @@ Write `deployments/arc-mainnet.json` from the broadcast file (`startBlock` is th
 ```
 
 ```sh
-pnpm --filter @keelson/sdk audit deployments/arc-mainnet.json
+pnpm --filter @keelson/sdk audit-deployment ../deployments/arc-mainnet.json
 ```
 
 Every line must read `ok`. The audit reads the chain: code at every address, the wiring between contracts, owners and pending owners, the policy, the regulator key, the registries' limits and the verifier's executable code against the one compiled from this repository. It exits non-zero on any failure.
@@ -116,7 +116,7 @@ pnpm --filter @keelson/sdk issuers-root "$ISSUER_URL"
 It prints `publish(uint256) argument: <root>`. In Safe{Wallet}'s transaction builder, call `publish(uint256)` on the issuers registry with that value, collect two signatures and execute. Once the keeper has run a round, audit with the roots:
 
 ```sh
-pnpm --filter @keelson/sdk audit deployments/arc-mainnet.json --roots
+pnpm --filter @keelson/sdk audit-deployment ../deployments/arc-mainnet.json --roots
 ```
 
 ## 8. Publish the app

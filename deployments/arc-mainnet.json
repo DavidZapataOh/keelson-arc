@@ -1,0 +1,27 @@
+{
+  "chainId": "5042",
+  "rpcUrl": "https://rpc.mainnet.arc.io",
+  "explorerUrl": "https://explorer.arc.io",
+  "startBlock": "26030809",
+  "deployment": {
+    "verifier": "0xe7fa55063b4c36d0e12c3800a90b762ec9aee645",
+    "issuers": "0x2b91f42d3ecc2800bea86d67ecc75ecc518662bc",
+    "sanctions": "0xe891b80b62810a9702374daa93ef2b58d2da302e",
+    "revocations": "0x8c6c7099a9dcfa2cb976f31cbee3c91b604c25f3",
+    "compliance": "0xea87476f4c60681eea847628c5ee0fb39a7e4b06",
+    "settlement": "0x66043b1032185ea353a09743f3a435be2be19233"
+  },
+  "safe": "0xF30A197521015234d13B6EC0fc374BADF7777bEa",
+  "keeper": "0x218a2D89E403F229c891Db2A1bD06C0C980c1e60",
+  "policy": {
+    "minTier": "1",
+    "maxProofAge": "3600",
+    "attestationTtl": "86400"
+  },
+  "regulatorKey": {
+    "x": "3702791727371170026154771973348272689062253487027069510760931066737216408352",
+    "y": "14276047863126476424470197378281060510484390657679924223135031103838061204926"
+  },
+  "listMaxAge": "86400",
+  "grace": "3600"
+}

@@ -5,7 +5,7 @@
   "scripts": {
     "typecheck": "tsc",
     "export:abis": "node scripts/export-abis.ts",
-    "audit": "node scripts/audit.ts",
+    "audit-deployment": "node scripts/audit.ts",
     "issuers-root": "node scripts/issuers-root.ts",
     "test": "vitest run --exclude 'test/live/**'",
     "test:live": "vitest run test/live"
