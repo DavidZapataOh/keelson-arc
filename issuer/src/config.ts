@@ -6,7 +6,7 @@ export type Config = {
   adminToken: string;
   regulatorToken: string;
   sanctionsSnapshot: string;
-  allowedOrigin: string | undefined;
+  allowedOrigins: string[];
   listsDir: string | undefined;
   demo: boolean;
 };
@@ -17,12 +17,19 @@ const required = (env: NodeJS.ProcessEnv, name: string): string => {
   return value;
 };
 
-const origin = (value: string | undefined): string | undefined => {
-  if (!value) return undefined;
-  if (value !== "*" && !/^https?:\/\/[^/\s]+$/.test(value)) {
-    throw new Error("ALLOWED_ORIGIN must be an origin such as https://app.example.org");
+const origins = (value: string | undefined): string[] => {
+  const list = (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  for (const item of list) {
+    if (item !== "*" && !/^https?:\/\/[^/\s]+$/.test(item)) {
+      throw new Error(
+        "ALLOWED_ORIGIN must be origins such as https://app.example.org, separated by commas",
+      );
+    }
   }
-  return value;
+  return list;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -47,7 +54,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     adminToken,
     regulatorToken,
     sanctionsSnapshot: required(env, "SANCTIONS_SNAPSHOT"),
-    allowedOrigin: origin(env.ALLOWED_ORIGIN),
+    allowedOrigins: origins(env.ALLOWED_ORIGIN),
     listsDir: env.LISTS_DIR || undefined,
     demo: env.DEMO_MODE === "testnet",
   };

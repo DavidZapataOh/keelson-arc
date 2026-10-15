@@ -165,13 +165,23 @@ describe("serving browsers", () => {
     await withApp({}, async (get) => {
       expect((await get("/issuer")).headers.get("access-control-allow-origin")).toBeNull();
     });
-    await withApp({ allowedOrigin: "https://app.example.org" }, async (get) => {
-      const response = await get("/issuer");
-      expect(response.headers.get("access-control-allow-origin")).toBe("https://app.example.org");
-      const preflight = await get("/demo/credentials", { method: "OPTIONS" });
-      expect(preflight.status).toBe(204);
-      expect(preflight.headers.get("access-control-allow-headers")).toBe("content-type");
-    });
+    await withApp(
+      { allowedOrigins: ["https://app.example.org", "https://beta.example.org"] },
+      async (get) => {
+        const response = await get("/issuer", { headers: { origin: "https://beta.example.org" } });
+        expect(response.headers.get("access-control-allow-origin")).toBe(
+          "https://beta.example.org",
+        );
+        const other = await get("/issuer", { headers: { origin: "https://evil.example.org" } });
+        expect(other.headers.get("access-control-allow-origin")).toBeNull();
+        const preflight = await get("/demo/credentials", {
+          method: "OPTIONS",
+          headers: { origin: "https://app.example.org" },
+        });
+        expect(preflight.status).toBe(204);
+        expect(preflight.headers.get("access-control-allow-headers")).toBe("content-type");
+      },
+    );
   });
 
   it("serves only the two published list files from its directory", async () => {

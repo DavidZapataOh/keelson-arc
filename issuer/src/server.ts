@@ -11,7 +11,7 @@ const MAX_BODY = 16 * 1024;
 export type Tokens = { adminToken: string; regulatorToken: string };
 
 export type Options = Tokens & {
-  allowedOrigin?: string | undefined;
+  allowedOrigins?: string[] | undefined;
   listsDir?: string | undefined;
   demo?: boolean | undefined;
   /** Milliseconds since the epoch; tests replace it. */
@@ -112,9 +112,13 @@ export function createApp(service: IssuerService, options: Options): Server {
   const perClient = new Map<string, Window>();
   const perDay = new Window(24 * 3600 * 1000);
 
-  const cors = (response: ServerResponse) => {
-    if (!options.allowedOrigin) return;
-    response.setHeader("access-control-allow-origin", options.allowedOrigin);
+  const cors = (request: IncomingMessage, response: ServerResponse) => {
+    const allowed = options.allowedOrigins ?? [];
+    const origin = request.headers.origin;
+    const match = allowed.includes("*") ? "*" : allowed.find((item) => item === origin);
+    if (!match) return;
+    response.setHeader("access-control-allow-origin", match);
+    response.setHeader("vary", "origin");
     response.setHeader("access-control-allow-headers", "content-type");
     response.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
   };
@@ -150,7 +154,7 @@ export function createApp(service: IssuerService, options: Options): Server {
     try {
       const url = new URL(request.url ?? "/", "http://issuer");
       const route = `${request.method} ${url.pathname}`;
-      cors(response);
+      cors(request, response);
 
       if (request.method === "OPTIONS") {
         response.writeHead(204);

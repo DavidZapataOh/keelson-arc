@@ -18,17 +18,17 @@ describe("loadConfig", () => {
 
   it("keeps the public extras off by default and validates them", () => {
     const config = loadConfig(env);
-    expect(config.allowedOrigin).toBeUndefined();
+    expect(config.allowedOrigins).toEqual([]);
     expect(config.listsDir).toBeUndefined();
     expect(config.demo).toBe(false);
     const on = loadConfig({
       ...env,
-      ALLOWED_ORIGIN: "https://app.example.org",
+      ALLOWED_ORIGIN: "https://app.example.org, https://beta.example.org",
       LISTS_DIR: "/data",
       DEMO_MODE: "testnet",
     });
     expect(on).toMatchObject({
-      allowedOrigin: "https://app.example.org",
+      allowedOrigins: ["https://app.example.org", "https://beta.example.org"],
       listsDir: "/data",
       demo: true,
     });

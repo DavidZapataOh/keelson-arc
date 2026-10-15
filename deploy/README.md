@@ -9,7 +9,7 @@ credentials for test networks.
 | `ISSUER_PRIVATE_KEY`, `ADMIN_TOKEN`, `REGULATOR_TOKEN` | issuer secrets |
 | `KEEPER_PRIVATE_KEY`, `RPC_URL`, `SANCTIONS_REGISTRY`, `REVOCATIONS_REGISTRY` | keeper account and registries |
 | `DATA_DIR`, `DB_PATH` | paths on a persistent volume |
-| `ALLOWED_ORIGIN` | the origin of the app that calls the issuer from a browser |
+| `ALLOWED_ORIGIN` | the origins of the app that calls the issuer from a browser, separated by commas |
 | `DEMO_MODE=testnet` | enables `POST /demo/credentials`; never set on mainnet |
 
 The issuer reads the sanctions snapshot at start, so restart it after a new snapshot when screening must use it.
