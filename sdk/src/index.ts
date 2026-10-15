@@ -1,5 +1,6 @@
 export * from "./abi.ts";
 export * from "./arc.ts";
+export * from "./audit.ts";
 export * from "./cctp.ts";
 export * from "./client.ts";
 export * from "./codec.ts";
@@ -8,6 +9,7 @@ export * from "./credential.ts";
 export * from "./deployment.ts";
 export * from "./disclosure.ts";
 export * from "./fees.ts";
+export * from "./issuers.ts";
 export * from "./merkle.ts";
 export * from "./parameters.ts";
 export { hash } from "./poseidon.ts";

@@ -4,6 +4,7 @@ import { createServer } from "node:net";
 import { resolve } from "node:path";
 import { arc, type Deployment, feeParams, readBroadcast } from "@keelson/sdk";
 import {
+  type Address,
   type Chain,
   createPublicClient,
   createWalletClient,
@@ -20,7 +21,16 @@ const contracts = resolve(new URL("../../../contracts", import.meta.url).pathnam
 
 // Foundry's well-known development mnemonic: these accounts are funded on the local node and hold nothing anywhere else.
 const MNEMONIC = "test test test test test test test test test test test junk";
-const ACCOUNTS = { owner: 0, seller: 1, buyer: 2, attester: 3 } as const;
+const ACCOUNTS = {
+  owner: 0,
+  seller: 1,
+  buyer: 2,
+  attester: 3,
+  keeper: 4,
+  signer1: 5,
+  signer2: 6,
+  signer3: 7,
+} as const;
 const account = (actor: keyof typeof ACCOUNTS) =>
   mnemonicToAccount(MNEMONIC, { addressIndex: ACCOUNTS[actor] });
 
@@ -94,7 +104,7 @@ export async function startChain(options: { forkUrl?: string } = {}): Promise<Lo
 /** Deploys the whole system with the contracts' own deploy script and reads the addresses back. */
 export function deploySystem(
   chain: LocalChain,
-  env: { regulatorKeyX: bigint; regulatorKeyY: bigint },
+  env: { regulatorKeyX: bigint; regulatorKeyY: bigint; safe?: Address; keeper?: Address },
 ): Deployment {
   execFileSync(
     "arc-forge",
@@ -121,6 +131,7 @@ export function deploySystem(
         ATTESTATION_TTL: "86400",
         LIST_MAX_AGE: "86400",
         ROOT_GRACE: "3600",
+        ...(env.safe && env.keeper ? { SAFE: env.safe, KEEPER: env.keeper } : {}),
       },
     },
   );
