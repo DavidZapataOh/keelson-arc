@@ -27,7 +27,7 @@ import {
 } from "@keelson/sdk";
 import { type Address, encodeFunctionData, parseUnits } from "viem";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type BuildResult, buildCircuit } from "../../circuits/scripts/build.ts";
+import { type Keys, productionKeys } from "../../circuits/scripts/keys.ts";
 import {
   deploySystem,
   deployToken,
@@ -39,13 +39,12 @@ import {
 const SAMPLE = resolve(
   new URL("../../lists/test/fixtures/sdn_advanced_sample.xml", import.meta.url).pathname,
 );
-const CIRCUIT = new URL("../../circuits/main/compliance.circom", import.meta.url).pathname;
 const REGULATOR_SECRET = 987654321n;
 const SANCTIONED_ADDRESS = "0x252a8bd2319d8a555b872990601221b3a2053bce";
 
 let chain: LocalChain;
 let deployment: Deployment;
-let circuit: BuildResult;
+let circuit: Keys;
 let issuer: IssuerService;
 let sanctionsTree: SortedTree;
 let issuersTree: MerkleTree;
@@ -122,7 +121,7 @@ beforeAll(async () => {
   chain = await startChain();
   const key = regulatorPublicKey(REGULATOR_SECRET);
   deployment = deploySystem(chain, { regulatorKeyX: key.x, regulatorKeyY: key.y });
-  circuit = await buildCircuit("compliance", CIRCUIT);
+  circuit = await productionKeys();
 
   const { snapshot } = await buildFromSource(SAMPLE, 18);
   sanctionsTree = openSnapshot(snapshot);

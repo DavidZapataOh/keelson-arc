@@ -9,7 +9,7 @@ const source = new URL("./fixtures/compliance.circom", import.meta.url).pathname
 let built: BuildResult;
 
 beforeAll(async () => {
-  built = await buildCircuit("compliance", source);
+  built = await buildCircuit("compliance", source, "compliance-fixture");
 }, 600_000);
 
 const vkey = () => JSON.parse(readFileSync(built.vkey, "utf8"));

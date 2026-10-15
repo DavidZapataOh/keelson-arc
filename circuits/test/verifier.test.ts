@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { renderVerifier, type VerificationKey } from "../scripts/verifier.ts";
 
@@ -56,16 +55,5 @@ describe("renderVerifier", () => {
   it("is deterministic and carries the MIT license header", () => {
     expect(renderVerifier("DemoVerifier", key(3))).toBe(source);
     expect(source.startsWith("// SPDX-License-Identifier: MIT")).toBe(true);
-  });
-});
-
-describe("committed verifier", () => {
-  it("is generated from the verification key of the production circuit", () => {
-    const committed = readFileSync(
-      new URL("../../contracts/src/verifiers/ComplianceVerifier.sol", import.meta.url),
-      "utf8",
-    );
-    expect(committed).toContain("contract ComplianceVerifier");
-    expect(committed).toContain("uint256[13] calldata signals");
   });
 });

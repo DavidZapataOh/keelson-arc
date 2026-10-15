@@ -12,7 +12,7 @@ import {
   toCalldata,
 } from "@keelson/sdk";
 import * as snarkjs from "snarkjs";
-import type { BuildResult } from "./build.ts";
+import type { Keys } from "./keys.ts";
 
 const TRADE_ID = 1n;
 const VALID_AT = 1_800_000_000n;
@@ -40,7 +40,7 @@ const parties = {
 };
 
 /** Proves the three fixture scenarios with the given build and writes them as JSON for the contract tests. */
-export async function writeFixtures(built: BuildResult, out: string): Promise<void> {
+export async function writeFixtures(keys: Pick<Keys, "wasm" | "zkey">, out: string): Promise<void> {
   const proofs: Record<string, unknown> = {};
   for (const [name, { credential, address }] of Object.entries(parties)) {
     const input = complianceInput({
@@ -58,7 +58,7 @@ export async function writeFixtures(built: BuildResult, out: string): Promise<vo
       regulatorKey,
       ephemeral: BigInt(address) * 7919n,
     });
-    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, built.wasm, built.zkey);
+    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, keys.wasm, keys.zkey);
     const { a, b, c } = toCalldata(proof);
     proofs[name] = {
       a: a.map(String),

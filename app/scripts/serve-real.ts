@@ -1,17 +1,14 @@
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { buildCircuit } from "../../circuits/scripts/build.ts";
+import { productionKeys } from "../../circuits/scripts/keys.ts";
 
 const PORT = "4392";
 const vite = "./node_modules/.bin/vite";
 const sha = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
 
-// The production circuit with its development keys, then an app build that pins exactly those files.
-const circuit = await buildCircuit(
-  "compliance",
-  new URL("../../circuits/main/compliance.circom", import.meta.url).pathname,
-);
+// The keys the system runs with, then an app build that pins exactly those files.
+const circuit = await productionKeys();
 
 execFileSync(vite, ["build", "--outDir", "dist-real"], {
   stdio: "inherit",
